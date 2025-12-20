@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		60BAF3492EF6DD8E00C05EA5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = "Gather Bible";
 			packageProductDependencies = (
+				6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */,
 			);
 			productName = "Gather Bible";
 			productReference = 60BAF3392EF6DD8D00C05EA5 /* Gather Bible.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 60BAF3302EF6DD8D00C05EA5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 60BAF33A2EF6DD8D00C05EA5 /* Products */;
 			projectDirPath = "";
@@ -578,6 +587,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/youversion/platform-sdk-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */;
+			productName = YouVersionPlatform;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 60BAF3312EF6DD8D00C05EA5 /* Project object */;
 }

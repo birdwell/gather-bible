@@ -7,26 +7,18 @@
 
 import SwiftUI
 import SwiftData
+import YouVersionPlatform
+
 
 @main
 struct Gather_BibleApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    init() {
+        YouVersionPlatform.configure(appKey: "LzkWlyXoj6qM5OGnOhUdKGjjvIXNNEBTYQRjL68MUPtFkYmJ")
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
     }
 }
