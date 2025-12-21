@@ -24,15 +24,15 @@ struct SyncableScrollView<Content: View>: View {
     @Binding var contentHeight: CGFloat
     @Binding var viewHeight: CGFloat
     @Binding var targetScrollOffset: Double
-    
+
     let isHost: Bool
     let shouldApplyOffset: Bool
     let onScroll: (CGFloat) -> Void
     let content: Content
-    
+
     // Use more anchors for finer precision
-    private let anchorCount = 400
-    
+    private let anchorCount = 200
+
     init(
         scrollOffset: Binding<CGFloat>,
         contentHeight: Binding<CGFloat>,
@@ -52,7 +52,7 @@ struct SyncableScrollView<Content: View>: View {
         self.onScroll = onScroll
         self.content = content()
     }
-    
+
     var body: some View {
         GeometryReader { outerGeometry in
             ScrollViewReader { scrollProxy in
@@ -96,13 +96,13 @@ struct SyncableScrollView<Content: View>: View {
                     guard shouldApplyOffset && !isHost else { return }
                     guard contentHeight > viewHeight else { return }
                     guard abs(newOffset - oldValue) > 0.001 else { return }
-                    
+
                     let clampedOffset = min(max(newOffset, 0), 1)
                     let scrollableHeight = contentHeight - viewHeight
                     let targetPixelOffset = clampedOffset * scrollableHeight
                     let anchorSpacing = contentHeight / Double(anchorCount)
                     let anchorIndex = min(Int(targetPixelOffset / anchorSpacing), anchorCount - 1)
-                    
+
                     withAnimation(.interpolatingSpring(stiffness: 100, damping: 15)) {
                         scrollProxy.scrollTo("sync_anchor_\(anchorIndex)", anchor: .top)
                     }
@@ -110,7 +110,7 @@ struct SyncableScrollView<Content: View>: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var anchorsOverlay: some View {
         if contentHeight > 1 {
