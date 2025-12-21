@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "state": {
+      ".read": true,
+      ".write": "auth != null && root.child('hosts').child(auth.uid).exists()"
+    },
+    "participants": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "hosts": {
+      ".read": "auth != null && root.child('hosts').child(auth.uid).exists()",
+      ".write": false
+    }
+  }
+}

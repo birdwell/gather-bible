@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Gather Bible
 //
-//  Created by Josh Birdwell on 12/20/25.
+//  Updated to include session sync integration
 //
 
 import SwiftData
@@ -10,17 +10,19 @@ import SwiftUI
 import YouVersionPlatformReader
 
 struct ContentView: View {
+    @StateObject private var sessionViewModel = SessionViewModel()
 
     var body: some View {
         TabView {
-            BibleReaderView(
-                appName: "Gather Bible",
-                signInMessage: "Sign in to see your YouVersion highlights in this Sample App."
-            )
+            // Bible tab with YouVersion integration
+            NavigationStack {
+                YouVersionBibleReader(sessionViewModel: sessionViewModel)
+            }
             .tabItem {
                 Label("Bible", systemImage: "book.fill")
             }
 
+            // Community tab with session management
             NavigationStack {
                 CommunityView()
             }
@@ -28,6 +30,7 @@ struct ContentView: View {
                 Label("Community", systemImage: "person.3.fill")
             }
         }
+        .environmentObject(sessionViewModel)
     }
 }
 

@@ -10,6 +10,7 @@
 		6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */; };
 		6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */; };
 		6036C95A2EF7345E00D5CF69 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9592EF7345E00D5CF69 /* FirebaseDatabase */; };
+		6036C97D2EF7B71400D5CF69 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C97C2EF7B71400D5CF69 /* FirebaseFunctions */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 				6036C95A2EF7345E00D5CF69 /* FirebaseDatabase in Frameworks */,
 				6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */,
 				6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */,
+				6036C97D2EF7B71400D5CF69 /* FirebaseFunctions in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,12 +104,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6036C97B2EF7B71400D5CF69 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		60BAF3302EF6DD8D00C05EA5 = {
 			isa = PBXGroup;
 			children = (
 				60BAF33B2EF6DD8D00C05EA5 /* Gather Bible */,
 				60BAF34B2EF6DD8E00C05EA5 /* Gather BibleTests */,
 				60BAF3552EF6DD8E00C05EA5 /* Gather BibleUITests */,
+				6036C97B2EF7B71400D5CF69 /* Frameworks */,
 				60BAF33A2EF6DD8D00C05EA5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -145,6 +155,7 @@
 				6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */,
 				6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */,
 				6036C9592EF7345E00D5CF69 /* FirebaseDatabase */,
+				6036C97C2EF7B71400D5CF69 /* FirebaseFunctions */,
 			);
 			productName = "Gather Bible";
 			productReference = 60BAF3392EF6DD8D00C05EA5 /* Gather Bible.app */;
@@ -650,6 +661,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseDatabase;
+		};
+		6036C97C2EF7B71400D5CF69 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
