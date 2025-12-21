@@ -11,20 +11,6 @@ import SwiftUI
 import YouVersionPlatform
 import YouVersionPlatformReader
 import YouVersionPlatformUI
-import os.log
-
-// #region agent log
-private let debugLogger = Logger(subsystem: "Josh-Birdwell.Gather-Bible", category: "DEBUG")
-private func debugLog(_ location: String, _ message: String, _ data: [String: Any] = [:]) {
-    var dataStr = ""
-    if !data.isEmpty, let jsonData = try? JSONSerialization.data(withJSONObject: data),
-        let str = String(data: jsonData, encoding: .utf8)
-    {
-        dataStr = " | \(str)"
-    }
-    debugLogger.notice("🔍 [DEBUG] \(location): \(message)\(dataStr)")
-}
-// #endregion
 
 // MARK: - Scroll Offset Preference Key (unused, keeping for reference)
 
@@ -71,17 +57,6 @@ struct YouVersionBibleReader: View {
                 targetScrollOffset: $targetScrollOffset,
                 shouldApplyOffset: !sessionViewModel.isHost && sessionViewModel.followHost,
                 onScroll: { offset in
-                    // #region agent log
-                    debugLog(
-                        "YouVersionBibleReader:onScroll", "Host scroll callback",
-                        [
-                            "hypothesisId": "H1",
-                            "isHost": sessionViewModel.isHost,
-                            "offset": offset,
-                            "contentHeight": contentHeight,
-                            "viewHeight": viewHeight,
-                        ])
-                    // #endregion
                     // Host publishes scroll position
                     if sessionViewModel.isHost {
                         let scrollPercentage =
@@ -91,15 +66,6 @@ struct YouVersionBibleReader: View {
 
                         // Only publish if changed significantly
                         if abs(scrollPercentage - lastPublishedOffset) > 0.005 {
-                            // #region agent log
-                            debugLog(
-                                "YouVersionBibleReader:publish", "Publishing scroll",
-                                [
-                                    "hypothesisId": "H1",
-                                    "scrollPercentage": scrollPercentage,
-                                    "lastPublishedOffset": lastPublishedOffset,
-                                ])
-                            // #endregion
                             lastPublishedOffset = scrollPercentage
                             sessionViewModel.publishNavigation(
                                 book: selectedBook,
@@ -142,31 +108,11 @@ struct YouVersionBibleReader: View {
             Task { await loadBooksForVersion() }
         }
         .onReceive(sessionViewModel.$currentState.compactMap { $0 }) { state in
-            // #region agent log
-            debugLog(
-                "YouVersionBibleReader:onReceive", "Received state update",
-                [
-                    "hypothesisId": "H4",
-                    "isHost": sessionViewModel.isHost,
-                    "followHost": sessionViewModel.followHost,
-                    "stateVerseOffset": state.verseOffset,
-                    "currentTargetOffset": targetScrollOffset,
-                ])
-            // #endregion
             // Follow host (book/chapter/version/scroll) if we're a guest
             if !sessionViewModel.isHost && sessionViewModel.followHost {
                 selectedBook = state.book
                 selectedChapter = state.chapter
                 selectedVersionId = state.versionId
-                // #region agent log
-                debugLog(
-                    "YouVersionBibleReader:setTarget", "Setting targetScrollOffset",
-                    [
-                        "hypothesisId": "H4",
-                        "newOffset": state.verseOffset,
-                        "oldOffset": targetScrollOffset,
-                    ])
-                // #endregion
                 targetScrollOffset = state.verseOffset  // Sync scroll position
             }
         }

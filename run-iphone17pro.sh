@@ -28,5 +28,5 @@ xcrun simctl install "$SIMULATOR_ID" "$APP_PATH"
 echo "🚀 Launching app..."
 xcrun simctl launch "$SIMULATOR_ID" "$BUNDLE_ID"
 
-echo "📋 Streaming logs (filtering for DEBUG)..."
-xcrun simctl spawn "$SIMULATOR_ID" log stream --predicate 'subsystem == "Josh-Birdwell.Gather-Bible"' --level debug
+echo "✅ $SIMULATOR_NAME is running!"
+
