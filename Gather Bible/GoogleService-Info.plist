@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBkdhICjkkVllpttvxbHBz1G5Gpw3bRzZI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>198643322220</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>Josh-Birdwell.Gather-Bible</string>
+	<key>PROJECT_ID</key>
+	<string>gather-bible</string>
+	<key>STORAGE_BUCKET</key>
+	<string>gather-bible.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:198643322220:ios:75c4996c97679ed373b749</string>
+	<key>DATABASE_URL</key>
+	<string>https://gather-bible-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */; };
+		6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */; };
+		6036C95A2EF7345E00D5CF69 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9592EF7345E00D5CF69 /* FirebaseDatabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,9 +35,30 @@
 		60BAF3522EF6DD8E00C05EA5 /* Gather BibleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gather BibleUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6036C9542EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"GoogleService-Info.plist",
+			);
+			target = 60BAF3472EF6DD8E00C05EA5 /* Gather BibleTests */;
+		};
+		6036C9552EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"GoogleService-Info.plist",
+			);
+			target = 60BAF3512EF6DD8E00C05EA5 /* Gather BibleUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		60BAF33B2EF6DD8D00C05EA5 /* Gather Bible */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6036C9542EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleTests" target */,
+				6036C9552EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleUITests" target */,
+			);
 			path = "Gather Bible";
 			sourceTree = "<group>";
 		};
@@ -56,6 +79,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6036C95A2EF7345E00D5CF69 /* FirebaseDatabase in Frameworks */,
+				6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */,
 				6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -118,6 +143,8 @@
 			name = "Gather Bible";
 			packageProductDependencies = (
 				6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */,
+				6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */,
+				6036C9592EF7345E00D5CF69 /* FirebaseDatabase */,
 			);
 			productName = "Gather Bible";
 			productReference = 60BAF3392EF6DD8D00C05EA5 /* Gather Bible.app */;
@@ -203,6 +230,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */,
+				6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 60BAF33A2EF6DD8D00C05EA5 /* Products */;
@@ -597,6 +625,14 @@
 				minimumVersion = 1.0.0;
 			};
 		};
+		6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -604,6 +640,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */;
 			productName = YouVersionPlatform;
+		};
+		6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		6036C9592EF7345E00D5CF69 /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
