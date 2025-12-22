@@ -6,6 +6,22 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		6036C99E2EF9E3E300D5CF69 /* Periphery */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 6036C99F2EF9E3E300D5CF69 /* Build configuration list for PBXAggregateTarget "Periphery" */;
+			buildPhases = (
+				6036C9A22EF9E3F100D5CF69 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = Periphery;
+			packageProductDependencies = (
+			);
+			productName = Periphery;
+		};
+/* End PBXAggregateTarget section */
+
 /* Begin PBXBuildFile section */
 		6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */; };
 		6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */; };
@@ -216,9 +232,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				KnownAssetTags = (
+					New,
+				);
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					6036C99E2EF9E3E300D5CF69 = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 					60BAF3382EF6DD8D00C05EA5 = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -253,6 +275,7 @@
 				60BAF3382EF6DD8D00C05EA5 /* Gather Bible */,
 				60BAF3472EF6DD8E00C05EA5 /* Gather BibleTests */,
 				60BAF3512EF6DD8E00C05EA5 /* Gather BibleUITests */,
+				6036C99E2EF9E3E300D5CF69 /* Periphery */,
 			);
 		};
 /* End PBXProject section */
@@ -280,6 +303,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6036C9A22EF9E3F100D5CF69 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/opt/homebrew/bin/periphery scan --project \"Gather Bible.xcodeproj\" --schemes \"Gather Bible\" --format xcode -- --destination \"generic/platform=iOS Simulator\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		60BAF3352EF6DD8D00C05EA5 /* Sources */ = {
@@ -319,6 +362,26 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		6036C9A02EF9E3E300D5CF69 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = HDMU7Y5UNB;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6036C9A12EF9E3E300D5CF69 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = HDMU7Y5UNB;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		60BAF35A2EF6DD8E00C05EA5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -607,6 +670,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6036C99F2EF9E3E300D5CF69 /* Build configuration list for PBXAggregateTarget "Periphery" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6036C9A02EF9E3E300D5CF69 /* Debug */,
+				6036C9A12EF9E3E300D5CF69 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		60BAF3342EF6DD8D00C05EA5 /* Build configuration list for PBXProject "Gather Bible" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

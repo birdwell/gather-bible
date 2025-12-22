@@ -29,6 +29,7 @@ final class BibleReaderViewModel {
   // MARK: - UI State
   var showVersionPicker = false
   var showBookPicker = false
+  var showParticipantsSheet = false
 
   // MARK: - Scroll State
   var scrollOffset: CGFloat = 0

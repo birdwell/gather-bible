@@ -1,0 +1,6 @@
+project: "Gather Bible.xcodeproj"
+schemes:
+  - Gather Bible
+targets:
+  - Gather Bible
+format: xcode
