@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A native SwiftUI scroll view with efficient scroll position sync
-/// Uses iOS 18 ScrollPosition API and onScrollPhaseChange for batched updates
+/// Uses iOS 18 ScrollPosition API with real-time updates during scroll
 struct SyncableScrollView<Content: View>: View {
   @Bindable var viewModel: BibleReaderViewModel
   let content: Content
@@ -16,6 +16,7 @@ struct SyncableScrollView<Content: View>: View {
   @State private var scrollPosition = ScrollPosition()
   @State private var isUserScrolling = false
   @State private var lastScrollOffset: CGFloat = 0
+  @State private var lastPublishedOffset: CGFloat = 0
 
   init(
     viewModel: BibleReaderViewModel,
@@ -34,13 +35,21 @@ struct SyncableScrollView<Content: View>: View {
       geo.contentOffset.y + geo.contentInsets.top
     } action: { _, newOffset in
       lastScrollOffset = newOffset
+
+      // Real-time updates while host is scrolling (throttled by distance)
+      if viewModel.isHost && isUserScrolling {
+        if abs(newOffset - lastPublishedOffset) > 20 {
+          lastPublishedOffset = newOffset
+          viewModel.publishScrollPosition(offset: newOffset, isScrolling: true)
+        }
+      }
     }
     .onScrollPhaseChange { _, newPhase in
       isUserScrolling = newPhase.isScrolling
 
-      // Host publishes position when scrolling stops
+      // Final position when scrolling stops
       if viewModel.isHost && !newPhase.isScrolling {
-        viewModel.publishScrollPosition(offset: lastScrollOffset)
+        viewModel.publishScrollPosition(offset: lastScrollOffset, isScrolling: false)
       }
     }
     .onChange(of: viewModel.targetScrollOffset) { _, targetOffset in

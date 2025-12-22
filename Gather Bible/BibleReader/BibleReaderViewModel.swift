@@ -107,8 +107,8 @@ final class BibleReaderViewModel {
     }
   }
 
-  /// Called when host stops scrolling - publishes absolute Y position
-  func publishScrollPosition(offset: CGFloat) {
+  /// Called during scroll (real-time) or when stopped - publishes absolute Y position
+  func publishScrollPosition(offset: CGFloat, isScrolling: Bool) {
     guard isHost else { return }
 
     sessionViewModel?.publishNavigation(
@@ -116,7 +116,7 @@ final class BibleReaderViewModel {
       chapter: selectedChapter,
       verseId: "\(selectedBook).\(selectedChapter).1",
       verseOffset: Double(offset),
-      scrolling: false
+      scrolling: isScrolling
     )
   }
 
