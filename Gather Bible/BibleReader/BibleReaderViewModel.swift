@@ -103,32 +103,30 @@ final class BibleReaderViewModel {
     selectedChapter = chapter
 
     if isHost {
-      publishNavigation(scrolling: false)
+      publishNavigation()
     }
   }
 
-  func handleScroll(offset: CGFloat) {
+  /// Called when host stops scrolling - publishes absolute Y position
+  func publishScrollPosition(offset: CGFloat) {
     guard isHost else { return }
 
-    let scrollPercentage =
-      contentHeight > viewHeight
-      ? offset / (contentHeight - viewHeight)
-      : 0
-
-    // Only publish if changed significantly
-    guard abs(scrollPercentage - lastPublishedOffset) > 0.005 else { return }
-
-    lastPublishedOffset = scrollPercentage
-    publishNavigation(verseOffset: scrollPercentage, scrolling: true)
-  }
-
-  private func publishNavigation(verseOffset: Double = 0.0, scrolling: Bool) {
     sessionViewModel?.publishNavigation(
       book: selectedBook,
       chapter: selectedChapter,
       verseId: "\(selectedBook).\(selectedChapter).1",
-      verseOffset: verseOffset,
-      scrolling: scrolling
+      verseOffset: Double(offset),
+      scrolling: false
+    )
+  }
+
+  private func publishNavigation() {
+    sessionViewModel?.publishNavigation(
+      book: selectedBook,
+      chapter: selectedChapter,
+      verseId: "\(selectedBook).\(selectedChapter).1",
+      verseOffset: 0,
+      scrolling: false
     )
   }
 
@@ -137,12 +135,13 @@ final class BibleReaderViewModel {
     Task {
       do {
         let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "en"
-        availableVersions = try await YouVersionConfig.getAvailableVersions(forLanguageTag: deviceLanguage)
+        availableVersions = try await YouVersionConfig.getAvailableVersions(
+          forLanguageTag: deviceLanguage)
 
         isLoadingVersions = false
 
         if let niv = availableVersions.first(where: {
-            ($0.id == 111)
+          ($0.id == 111)
         }) {
           selectedVersionId = niv.id
         } else if availableVersions.first != nil {

@@ -34,14 +34,12 @@ struct BookAndChapterPickerSheet: View {
     let isExpanded = expandedBookId == bookId
     let isSelected = viewModel.selectedBook == bookId
 
-    VStack(spacing: 0) {
+    VStack(alignment: .leading, spacing: 0) {
       Button {
-        withAnimation(.easeInOut(duration: 0.2)) {
-          if isExpanded {
-            expandedBookId = nil
-          } else {
-            expandedBookId = bookId
-          }
+        if isExpanded {
+          expandedBookId = nil
+        } else {
+          expandedBookId = bookId
         }
       } label: {
         HStack {
@@ -50,20 +48,26 @@ struct BookAndChapterPickerSheet: View {
             .fontWeight(isSelected ? .semibold : .regular)
             .foregroundStyle(Color.primary)
           Spacer()
-          Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+          Image(systemName: "chevron.down")
             .font(.caption)
             .foregroundStyle(Color.secondary)
+            .rotationEffect(.degrees(isExpanded ? 0 : -90))
+            .animation(.easeInOut(duration: 0.2), value: isExpanded)
+            .frame(width: 16, height: 16)
         }
         .contentShape(Rectangle())
         .padding(.vertical, 12)
+        .frame(minHeight: 44)
       }
       .buttonStyle(PlainButtonStyle())
 
       if isExpanded, let chapters = book.chapters {
         chapterGrid(bookId: bookId, chapterCount: chapters.count)
           .padding(.bottom, 12)
+          .transition(.opacity)
       }
     }
+    .animation(.spring(response: 0.35, dampingFraction: 0.85), value: expandedBookId)
   }
 
   private func chapterGrid(bookId: String, chapterCount: Int) -> some View {
@@ -96,4 +100,12 @@ struct BookAndChapterPickerSheet: View {
       }
     }
   }
+}
+
+// MARK: - Preview
+
+#Preview {
+  let viewModel = BibleReaderViewModel()
+  viewModel.selectedVersionBooks = BibleBook.mockBooks
+  return BookAndChapterPickerSheet(viewModel: viewModel)
 }
