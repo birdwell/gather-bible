@@ -320,7 +320,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/opt/homebrew/bin/periphery scan --project \"Gather Bible.xcodeproj\" --schemes \"Gather Bible\" --format xcode -- --destination \"generic/platform=iOS Simulator\"\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/opt/homebrew/bin/periphery scan --project \"Gather Bible.xcodeproj\" --schemes \"Gather Bible\" --format xcode -- -destination \"generic/platform=iOS Simulator\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
