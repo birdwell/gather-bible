@@ -85,7 +85,7 @@ class SessionViewModel: ObservableObject {
         do {
             print("🔵 [Session] Calling generateUniqueJoinCode...")
             let result = try await functions.httpsCallable("generateUniqueJoinCode").call()
-            print("🔵 [Session] Cloud function returned: \(result.data ?? "nil")")
+            print("🔵 [Session] Cloud function returned: \(result.data)")
             
             guard let data = result.data as? [String: Any],
                   let joinCode = data["joinCode"] as? String else {

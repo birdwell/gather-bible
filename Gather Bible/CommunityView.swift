@@ -12,8 +12,6 @@ struct CommunityView: View {
             }
             .padding()
         }
-        .navigationTitle("Community")
-        .navigationBarTitleDisplayMode(.large)
     }
 }
 

@@ -10,30 +10,28 @@ import SwiftUI
 import YouVersionPlatformReader
 
 struct ContentView: View {
-    @StateObject private var sessionViewModel = SessionViewModel()
+  @StateObject private var sessionViewModel = SessionViewModel()
 
-    var body: some View {
-        TabView {
-            // Bible tab with YouVersion integration
-            NavigationStack {
-                YouVersionBibleReader(sessionViewModel: sessionViewModel)
-            }
-            .tabItem {
-                Label("Bible", systemImage: "book.fill")
-            }
+  var body: some View {
+    TabView {
+      NavigationStack {
+        BibleReader()
+      }
+      .tabItem {
+        Label("Bible", systemImage: "book.fill")
+      }
 
-            // Community tab with session management
-            NavigationStack {
-                CommunityView()
-            }
-            .tabItem {
-                Label("Community", systemImage: "person.3.fill")
-            }
-        }
-        .environmentObject(sessionViewModel)
+      NavigationStack {
+        CommunityView()
+      }
+      .tabItem {
+        Label("Community", systemImage: "person.3.fill")
+      }
     }
+    .environmentObject(sessionViewModel)
+  }
 }
 
 #Preview {
-    ContentView()
+  ContentView()
 }

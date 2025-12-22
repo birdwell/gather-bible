@@ -18,8 +18,8 @@ struct YouVersionConfig {
     }
     
     /// Get available Bible versions
-    static func getAvailableVersions() async throws -> [BibleVersion] {
-        return try await YouVersionAPI.Bible.versions()
+    static func getAvailableVersions(forLanguageTag: String?) async throws -> [BibleVersion] {
+        return try await YouVersionAPI.Bible.versions(forLanguageTag: forLanguageTag)
     }
     
     /// Get version details including books
@@ -27,9 +27,6 @@ struct YouVersionConfig {
         return try await YouVersionAPI.Bible.version(versionId: versionId)
     }
 }
-
-/// Extension to make BibleVersion identifiable for SwiftUI Lists
-extension BibleVersion: Identifiable {}
 
 /// Extensions for BibleReference to handle USFM parsing
 extension BibleReference {

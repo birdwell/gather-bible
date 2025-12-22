@@ -152,11 +152,25 @@ final class SessionSync: ObservableObject {
         cleanup()
 
         if !isHost {
-            try? await db.child("sessions").child(sessionId).child("participants").child(userId)
-                .removeValue()
+            do {
+                try await db.child("sessions").child(sessionId).child("participants").child(userId)
+                    .removeValue()
+            } catch {
+                // Best-effort cleanup; log and continue
+                #if DEBUG
+                print("[SessionSync] Failed to remove participant on leave: \(error)")
+                #endif
+            }
         } else {
-            try? await db.child("sessions").child(sessionId).child("state").child("active")
-                .setValue(false)
+            do {
+                try await db.child("sessions").child(sessionId).child("state").child("active")
+                    .setValue(false)
+            } catch {
+                // Best-effort host deactivation; log and continue
+                #if DEBUG
+                print("[SessionSync] Failed to mark session inactive on leave: \(error)")
+                #endif
+            }
         }
     }
 
@@ -165,7 +179,7 @@ final class SessionSync: ObservableObject {
         book: String, chapter: Int, verseId: String, verseOffset: Double, scrolling: Bool,
         versionId: Int = 111
     ) {
-        guard isHost, let sessionId = sessionId else { return }
+        guard isHost else { return }
 
         if scrolling {
             scrollTimer?.invalidate()
