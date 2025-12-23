@@ -11,6 +11,10 @@ import SwiftUI
 struct InSessionView: View {
   @ObservedObject var viewModel: SessionViewModel
 
+  @State private var showingCreateDiscussion = false
+  @State private var showingDraftDiscussions = false
+  @State private var showingDiscussionResults = false
+
   var body: some View {
     VStack(spacing: 16) {
       SessionCodeBanner(
@@ -28,6 +32,12 @@ struct InSessionView: View {
         claimHostButton
       }
 
+      // Host discussion controls
+      if viewModel.isHost {
+        Divider()
+        discussionSection
+      }
+
       Divider()
 
       leaveButton
@@ -35,6 +45,25 @@ struct InSessionView: View {
       if viewModel.isLoading {
         ProgressView()
       }
+    }
+    .sheet(isPresented: $showingCreateDiscussion) {
+      CreateDiscussionSheet(viewModel: viewModel)
+    }
+    .sheet(isPresented: $showingDraftDiscussions) {
+      DraftDiscussionsView(viewModel: viewModel)
+    }
+    .sheet(isPresented: $showingDiscussionResults) {
+      if let discussion = viewModel.activeDiscussion ?? viewModel.completedDiscussions.first {
+        DiscussionResultsView(viewModel: viewModel, discussion: discussion)
+      }
+    }
+    .sheet(
+      isPresented: Binding(
+        get: { viewModel.showDiscussionPrompt },
+        set: { viewModel.showDiscussionPrompt = $0 }
+      )
+    ) {
+      DiscussionPromptSheet(viewModel: viewModel)
     }
   }
 
@@ -80,6 +109,74 @@ struct InSessionView: View {
     .buttonStyle(.borderedProminent)
     .tint(.orange)
     .disabled(viewModel.isLoading)
+  }
+
+  // MARK: - Discussion Section
+
+  private var discussionSection: some View {
+    VStack(spacing: 12) {
+      // Active discussion indicator
+      if let discussion = viewModel.activeDiscussion {
+        Button {
+          showingDiscussionResults = true
+        } label: {
+          HStack {
+            Image(systemName: "bubble.left.and.bubble.right.fill")
+              .foregroundStyle(.blue)
+
+            VStack(alignment: .leading, spacing: 2) {
+              Text("Active Discussion")
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+              Text(discussion.question)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+
+            Spacer()
+
+            Text("\(viewModel.discussionResponses.count)")
+              .font(.caption)
+              .fontWeight(.medium)
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(Color.blue.opacity(0.2))
+              .clipShape(Capsule())
+
+            Image(systemName: "chevron.right")
+              .font(.caption)
+              .foregroundStyle(.tertiary)
+          }
+          .padding(12)
+          .background(Color(.secondarySystemBackground))
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+      }
+
+      // Discussion action buttons
+      HStack(spacing: 12) {
+        Button {
+          showingCreateDiscussion = true
+        } label: {
+          Label("New Discussion", systemImage: "plus.bubble.fill")
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.activeDiscussion != nil)
+
+        if !viewModel.draftDiscussions.isEmpty {
+          Button {
+            showingDraftDiscussions = true
+          } label: {
+            Label("\(viewModel.draftDiscussions.count) Drafts", systemImage: "doc.text")
+          }
+          .buttonStyle(.bordered)
+        }
+      }
+    }
   }
 
   // MARK: - Leave Button

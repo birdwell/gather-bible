@@ -1,0 +1,141 @@
+//
+//  DiscussionResultsView.swift
+//  Gather Bible
+//
+//  Full-screen view for host to see discussion responses
+//
+
+import SwiftUI
+
+/// View for displaying discussion responses (host only)
+struct DiscussionResultsView: View {
+  @ObservedObject var viewModel: SessionViewModel
+  @Environment(\.dismiss) private var dismiss
+
+  let discussion: Discussion
+
+  var body: some View {
+    NavigationStack {
+      ScrollView {
+        VStack(spacing: 24) {
+          questionHeader
+
+          if viewModel.discussionResponses.isEmpty {
+            EmptyStateView(
+              icon: "person.2.slash",
+              title: "No responses yet",
+              subtitle: "Waiting for guests to submit their thoughts..."
+            )
+          } else {
+            LazyVStack(spacing: 16) {
+              ForEach(viewModel.discussionResponses) { response in
+                ResponseCard(response: response)
+              }
+            }
+          }
+        }
+        .padding()
+      }
+      .navigationTitle("Discussion")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Done") { dismiss() }
+        }
+        if discussion.status == .active {
+          ToolbarItem(placement: .bottomBar) {
+            Button {
+              Task {
+                await viewModel.completeDiscussion()
+                dismiss()
+              }
+            } label: {
+              Label("End Discussion", systemImage: "checkmark.circle.fill")
+            }
+            .tint(.green)
+            .disabled(viewModel.isLoading)
+          }
+        }
+      }
+    }
+  }
+
+  private var questionHeader: some View {
+    VStack(spacing: 16) {
+      Image(systemName: "bubble.left.and.bubble.right.fill")
+        .font(.system(size: 40))
+        .foregroundStyle(.blue)
+
+      Text(discussion.question)
+        .font(.title2)
+        .fontWeight(.semibold)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+
+      HStack(spacing: 16) {
+        Label("\(viewModel.discussionResponses.count) responses", systemImage: "text.bubble.fill")
+
+        if discussion.status == .active {
+          Label("Active", systemImage: "circle.fill").foregroundStyle(.green)
+        } else if discussion.status == .completed {
+          Label("Completed", systemImage: "checkmark.circle.fill").foregroundStyle(.secondary)
+        }
+      }
+      .font(.subheadline)
+      .foregroundStyle(.secondary)
+    }
+    .padding(.vertical, 8)
+  }
+}
+
+private struct ResponseCard: View {
+  let response: DiscussionResponse
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack {
+        Image(systemName: "person.circle.fill")
+          .font(.title2)
+          .foregroundStyle(.secondary)
+
+        Text(response.participantName).font(.headline)
+
+        Spacer()
+
+        Text(response.submittedAt.relativeFormatted)
+          .font(.caption)
+          .foregroundStyle(.tertiary)
+      }
+
+      Text(response.response)
+        .font(.body)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .padding()
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 16))
+  }
+}
+
+extension TimeInterval {
+  fileprivate var relativeFormatted: String {
+    let date = Date(timeIntervalSince1970: self / 1000)
+    let formatter = RelativeDateTimeFormatter()
+    formatter.unitsStyle = .abbreviated
+    return formatter.localizedString(for: date, relativeTo: Date())
+  }
+}
+
+#Preview {
+  DiscussionResultsView(
+    viewModel: SessionViewModel(),
+    discussion: Discussion(
+      id: "preview",
+      sessionId: "session1",
+      question: "What stood out to you in this passage?",
+      status: .active,
+      createdAt: Date().timeIntervalSince1970 * 1000
+    )
+  )
+}
