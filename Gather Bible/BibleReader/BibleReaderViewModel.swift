@@ -131,6 +131,41 @@ final class BibleReaderViewModel {
     )
   }
 
+  func nextChapter() {
+    guard
+      let currentBookIndex = selectedVersionBooks.firstIndex(where: {
+        ($0.id ?? "") == selectedBook
+      })
+    else { return }
+    let currentBook = selectedVersionBooks[currentBookIndex]
+    let chapterCount = currentBook.chapters?.count ?? 1
+
+    if selectedChapter < chapterCount {
+      handleNavigation(book: selectedBook, chapter: selectedChapter + 1)
+    } else if currentBookIndex < selectedVersionBooks.count - 1 {
+      // Move to next book
+      let nextBook = selectedVersionBooks[currentBookIndex + 1]
+      handleNavigation(book: nextBook.id ?? "GEN", chapter: 1)
+    }
+  }
+
+  func previousChapter() {
+    guard
+      let currentBookIndex = selectedVersionBooks.firstIndex(where: {
+        ($0.id ?? "") == selectedBook
+      })
+    else { return }
+
+    if selectedChapter > 1 {
+      handleNavigation(book: selectedBook, chapter: selectedChapter - 1)
+    } else if currentBookIndex > 0 {
+      // Move to previous book
+      let prevBook = selectedVersionBooks[currentBookIndex - 1]
+      let prevChapterCount = prevBook.chapters?.count ?? 1
+      handleNavigation(book: prevBook.id ?? "GEN", chapter: prevChapterCount)
+    }
+  }
+
   // MARK: - Data Loading
   func loadVersions() {
     Task {
