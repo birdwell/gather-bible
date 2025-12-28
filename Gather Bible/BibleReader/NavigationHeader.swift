@@ -28,7 +28,7 @@ struct NavigationHeader: View {
             Image(systemName: "person.2.fill")
             Text("\(sessionViewModel.activeParticipantCount)")
           }
-          .font(.system(size: 14, weight: .semibold))
+          .font(.subheadline.weight(.semibold))
           .foregroundStyle(Color.primary)
           .padding(.horizontal, 12)
           .padding(.vertical, 8)
@@ -36,6 +36,8 @@ struct NavigationHeader: View {
           .clipShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())
+        .accessibilityLabel("\(sessionViewModel.activeParticipantCount) participants in session")
+        .accessibilityHint("Double tap to view all participants")
       }
     }
     .padding(.horizontal, 16)

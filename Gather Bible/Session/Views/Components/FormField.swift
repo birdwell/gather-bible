@@ -13,6 +13,12 @@ struct FormField<Content: View>: View {
   var helper: String? = nil
   @ViewBuilder let content: () -> Content
 
+  @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
+  private var helperColor: HierarchicalShapeStyle {
+    colorSchemeContrast == .increased ? .primary : .secondary
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(label)
@@ -24,9 +30,10 @@ struct FormField<Content: View>: View {
       if let helper {
         Text(helper)
           .font(.caption)
-          .foregroundStyle(.tertiary)
+          .foregroundStyle(helperColor)
       }
     }
+    .accessibilityElement(children: .contain)
   }
 }
 

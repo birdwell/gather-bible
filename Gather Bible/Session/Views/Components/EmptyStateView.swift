@@ -19,6 +19,7 @@ struct EmptyStateView: View {
       Image(systemName: icon)
         .font(.system(size: iconSize))
         .foregroundStyle(.tertiary)
+        .accessibilityHidden(true)
 
       Text(title)
         .font(.headline)
@@ -33,6 +34,8 @@ struct EmptyStateView: View {
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 48)
+    .accessibilityElement(children: .combine)
+    .accessibilityAddTraits(.isStaticText)
   }
 }
 

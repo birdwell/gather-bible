@@ -91,6 +91,10 @@ struct InSessionView: View {
         .foregroundStyle(.secondary)
     }
     .font(.subheadline)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(
+      "\(viewModel.activeParticipantCount) participant\(viewModel.activeParticipantCount == 1 ? "" : "s"), currently reading \(viewModel.currentBook) chapter \(viewModel.currentChapter)"
+    )
   }
 
   // MARK: - Follow Host Toggle
@@ -114,6 +118,7 @@ struct InSessionView: View {
     .buttonStyle(.borderedProminent)
     .tint(.orange)
     .disabled(viewModel.isLoading)
+    .accessibilityHint("Double tap to become the session host")
   }
 
   // MARK: - Discussion Section
@@ -159,6 +164,10 @@ struct InSessionView: View {
           .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Active discussion: \(discussion.question)")
+        .accessibilityValue("\(viewModel.discussionResponses.count) responses")
+        .accessibilityHint("Double tap to view responses")
       }
 
       // Discussion action buttons
@@ -171,6 +180,7 @@ struct InSessionView: View {
         }
         .buttonStyle(.bordered)
         .disabled(viewModel.activeDiscussion != nil)
+        .accessibilityHint("Double tap to create a new discussion question")
 
         if !viewModel.draftDiscussions.isEmpty {
           Button {
@@ -179,6 +189,8 @@ struct InSessionView: View {
             Label("\(viewModel.draftDiscussions.count) Drafts", systemImage: "doc.text")
           }
           .buttonStyle(.bordered)
+          .accessibilityLabel("\(viewModel.draftDiscussions.count) draft discussions")
+          .accessibilityHint("Double tap to view saved draft discussions")
         }
       }
     }
@@ -195,6 +207,7 @@ struct InSessionView: View {
     }
     .buttonStyle(.bordered)
     .disabled(viewModel.isLoading)
+    .accessibilityHint("Double tap to leave this session")
   }
 }
 

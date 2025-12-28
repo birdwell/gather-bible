@@ -37,10 +37,12 @@ struct NotInSessionView: View {
       Image(systemName: "person.2.fill")
         .font(.system(size: isRegularWidth ? 56 : 40))
         .foregroundStyle(.secondary)
+        .accessibilityHidden(true)
 
       Text("Read Together")
         .font(isRegularWidth ? .title : .title2)
         .fontWeight(.semibold)
+        .accessibilityAddTraits(.isHeader)
 
       Text("Start a session and share the code with others to read the same passage in sync.")
         .font(isRegularWidth ? .body : .subheadline)
@@ -63,6 +65,7 @@ struct NotInSessionView: View {
       .buttonStyle(.borderedProminent)
       .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
+      .accessibilityHint("Double tap to start a new reading session")
 
       Button {
         showingJoinSheet = true
@@ -73,6 +76,7 @@ struct NotInSessionView: View {
       .buttonStyle(.bordered)
       .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
+      .accessibilityHint("Double tap to join an existing session with a code")
     }
   }
 }

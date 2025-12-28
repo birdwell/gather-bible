@@ -27,6 +27,7 @@ struct AsyncActionButton: View {
         if isLoading {
           ProgressView()
             .tint(style == .prominent ? .white : .accentColor)
+            .accessibilityHidden(true)
         } else {
           Text(title)
             .fontWeight(.semibold)
@@ -34,6 +35,8 @@ struct AsyncActionButton: View {
       }
       .frame(maxWidth: .infinity)
     }
+    .accessibilityLabel(title)
+    .accessibilityValue(isLoading ? "Loading" : "")
     .modifier(ButtonStyleModifier(style: style))
     .controlSize(.large)
     .disabled(isDisabled || isLoading)

@@ -34,6 +34,12 @@ struct BibleReader: View {
 private struct ReaderContentView: View {
   @Bindable var viewModel: BibleReaderViewModel
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  @ScaledMetric(relativeTo: .body) private var buttonSizeBase: CGFloat = 56
+  @ScaledMetric(relativeTo: .body) private var buttonSizeRegular: CGFloat = 64
+  @ScaledMetric(relativeTo: .body) private var buttonIconSizeBase: CGFloat = 20
+  @ScaledMetric(relativeTo: .body) private var buttonIconSizeRegular: CGFloat = 24
 
   private var isRegularWidth: Bool {
     horizontalSizeClass == .regular
@@ -48,11 +54,11 @@ private struct ReaderContentView: View {
   }
 
   private var buttonSize: CGFloat {
-    isRegularWidth ? 64 : 56
+    isRegularWidth ? buttonSizeRegular : buttonSizeBase
   }
 
   private var buttonIconSize: CGFloat {
-    isRegularWidth ? 24 : 20
+    isRegularWidth ? buttonIconSizeRegular : buttonIconSizeBase
   }
 
   var body: some View {
@@ -98,8 +104,13 @@ private struct ReaderContentView: View {
           .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
       }
       .buttonStyle(PlainButtonStyle())
+      .accessibilityLabel("Previous Chapter")
+      .accessibilityHint("Go to the previous chapter")
+      .keyboardShortcut(.leftArrow, modifiers: [])
       .sensoryFeedback(
-        .impact(weight: .light), trigger: "\(viewModel.selectedBook).\(viewModel.selectedChapter)")
+        .impact(weight: .light),
+        trigger: reduceMotion ? nil : "\(viewModel.selectedBook).\(viewModel.selectedChapter)"
+      )
 
       Spacer()
 
@@ -113,8 +124,13 @@ private struct ReaderContentView: View {
           .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
       }
       .buttonStyle(PlainButtonStyle())
+      .accessibilityLabel("Next Chapter")
+      .accessibilityHint("Go to the next chapter")
+      .keyboardShortcut(.rightArrow, modifiers: [])
       .sensoryFeedback(
-        .impact(weight: .light), trigger: "\(viewModel.selectedBook).\(viewModel.selectedChapter)")
+        .impact(weight: .light),
+        trigger: reduceMotion ? nil : "\(viewModel.selectedBook).\(viewModel.selectedChapter)"
+      )
     }
     .padding(.horizontal, isRegularWidth ? 48 : 24)
     .padding(.bottom, isRegularWidth ? 32 : 24)

@@ -28,12 +28,14 @@ struct CreateDiscussionSheet: View {
 
         VStack(alignment: .leading, spacing: 8) {
           Toggle("Send immediately", isOn: $publishImmediately)
+            .accessibilityHint(publishImmediately ? "Currently on. Guests will receive the prompt right away" : "Currently off. Discussion will be saved as draft")
           Text(
             publishImmediately
               ? "Guests will receive the prompt right away" : "Save as draft to send later"
           )
           .font(.caption)
-          .foregroundStyle(.tertiary)
+          .foregroundStyle(.secondary)
+          .accessibilityHidden(true)
         }
 
       }

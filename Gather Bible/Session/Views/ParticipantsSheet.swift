@@ -10,6 +10,7 @@ import SwiftUI
 struct ParticipantsSheet: View {
   @ObservedObject var viewModel: SessionViewModel
   @Environment(\.dismiss) private var dismiss
+  @State private var codeCopied = false
 
   var body: some View {
     NavigationStack {
@@ -49,7 +50,21 @@ struct ParticipantsSheet: View {
           Text("\(viewModel.activeParticipantCount) Active")
         } footer: {
           if let joinCode = viewModel.joinCode.isEmpty ? nil : viewModel.joinCode {
-            Text("Session Code: \(joinCode)")
+            HStack {
+              Text("Session Code: \(joinCode)")
+              Button {
+                UIPasteboard.general.string = joinCode
+                codeCopied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                  codeCopied = false
+                }
+              } label: {
+                Image(systemName: codeCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                  .foregroundStyle(codeCopied ? .green : .accentColor)
+              }
+              .buttonStyle(.plain)
+              .accessibilityLabel(codeCopied ? "Code copied" : "Copy code")
+            }
           }
         }
       }

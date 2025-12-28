@@ -144,6 +144,7 @@ struct CommunityViewiPad: View {
 struct SessionDetailView: View {
   @ObservedObject var viewModel: SessionViewModel
   @State private var showingJoinSheet = false
+  @State private var codeCopied = false
 
   var body: some View {
     ScrollView {
@@ -177,8 +178,24 @@ struct SessionDetailView: View {
           Text("Session Code")
             .font(.subheadline)
             .foregroundStyle(.secondary)
-          Text(viewModel.joinCode)
-            .font(.system(.largeTitle, design: .monospaced, weight: .bold))
+          HStack(spacing: 12) {
+            Text(viewModel.joinCode)
+              .font(.system(.largeTitle, design: .monospaced, weight: .bold))
+            Button {
+              UIPasteboard.general.string = viewModel.joinCode
+              codeCopied = true
+              DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                codeCopied = false
+              }
+            } label: {
+              Image(systemName: codeCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                .font(.title2)
+                .foregroundStyle(codeCopied ? .green : .accentColor)
+                .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(codeCopied ? "Code copied" : "Copy code")
+          }
         }
 
         Spacer()

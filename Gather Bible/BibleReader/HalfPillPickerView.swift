@@ -13,7 +13,7 @@ struct HalfPillPickerView: View {
       // Book & Chapter button (left side)
       Button(action: handleChapterTap) {
         Text(bookAndChapter)
-          .font(.system(size: 14, weight: .semibold))
+          .font(.subheadline.weight(.semibold))
           .foregroundStyle(Color.primary)
           .lineLimit(1)
           .frame(minWidth: 60)
@@ -23,16 +23,19 @@ struct HalfPillPickerView: View {
       }
       .buttonStyle(PlainButtonStyle())
       .clipShape(HalfPillShape(side: .left))
+      .accessibilityLabel("Current chapter: \(bookAndChapter)")
+      .accessibilityHint("Double tap to select a different book or chapter")
 
       // Divider
       Rectangle()
         .fill(Color(.systemBackground))
         .frame(width: 2, height: 40)
+        .accessibilityHidden(true)
 
       // Version button (right side)
       Button(action: handleVersionTap) {
         Text(versionAbbreviation)
-          .font(.system(size: 14, weight: .semibold))
+          .font(.subheadline.weight(.semibold))
           .foregroundStyle(Color.primary)
           .frame(minWidth: 36)
           .frame(height: 40)
@@ -41,6 +44,8 @@ struct HalfPillPickerView: View {
       }
       .buttonStyle(PlainButtonStyle())
       .clipShape(HalfPillShape(side: .right))
+      .accessibilityLabel("Bible version: \(versionAbbreviation)")
+      .accessibilityHint("Double tap to select a different Bible translation")
     }
     .background(Color(.systemGray5))
     .clipShape(Capsule())

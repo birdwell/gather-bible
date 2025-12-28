@@ -83,6 +83,7 @@ struct JoinSessionSheet: View {
     if let error = viewModel.errorMessage {
       HStack {
         Image(systemName: "exclamationmark.triangle.fill")
+          .accessibilityHidden(true)
         Text(error)
       }
       .font(.subheadline)
@@ -91,6 +92,9 @@ struct JoinSessionSheet: View {
       .frame(maxWidth: .infinity)
       .background(Color.red.opacity(0.1))
       .clipShape(RoundedRectangle(cornerRadius: 8))
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel("Error: \(error)")
+      .accessibilityAddTraits(.isStaticText)
     }
   }
 
