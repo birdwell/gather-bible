@@ -11,27 +11,31 @@ import SwiftUI
 struct SessionCodeBanner: View {
   let code: String
   let isHost: Bool
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   @State private var codeCopied = false
 
+  private var isRegularWidth: Bool {
+    horizontalSizeClass == .regular
+  }
+
   var body: some View {
-    VStack(spacing: 8) {
+    VStack(spacing: isRegularWidth ? 12 : 8) {
       Text("Session Code")
-        .font(.caption)
+        .font(isRegularWidth ? .subheadline : .caption)
         .foregroundStyle(.secondary)
 
-      HStack(spacing: 12) {
+      HStack(spacing: isRegularWidth ? 16 : 12) {
         Text(code)
-          .font(.system(.largeTitle, design: .monospaced))
-          .fontWeight(.bold)
+          .font(.system(size: isRegularWidth ? 48 : 34, weight: .bold, design: .monospaced))
           .foregroundStyle(.primary)
-          .kerning(4)
+          .kerning(isRegularWidth ? 6 : 4)
 
         Button {
           copyCode()
         } label: {
           Image(systemName: codeCopied ? "checkmark.circle.fill" : "doc.on.doc")
-            .font(.title2)
+            .font(isRegularWidth ? .title : .title2)
             .foregroundStyle(codeCopied ? .green : .accentColor)
             .contentTransition(.symbolEffect(.replace))
         }
@@ -47,14 +51,14 @@ struct SessionCodeBanner: View {
 
       if isHost {
         Label("You're hosting", systemImage: "crown.fill")
-          .font(.caption)
+          .font(isRegularWidth ? .subheadline : .caption)
           .foregroundStyle(.orange)
       }
     }
     .frame(maxWidth: .infinity)
-    .padding()
+    .padding(isRegularWidth ? 24 : 16)
     .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .clipShape(RoundedRectangle(cornerRadius: isRegularWidth ? 16 : 12))
     .animation(.easeInOut(duration: 0.2), value: codeCopied)
   }
 

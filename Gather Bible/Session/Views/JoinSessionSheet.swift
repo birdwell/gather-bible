@@ -28,22 +28,6 @@ struct JoinSessionSheet: View {
         }
 
         errorMessage
-
-        Spacer()
-
-        AsyncActionButton(
-          title: "Join Session",
-          isLoading: viewModel.isLoading,
-          isDisabled: joinCodeInput.count != 6
-        ) {
-          await viewModel.joinSession(
-            joinCode: joinCodeInput,
-            displayName: displayNameInput.isEmpty ? "Guest" : displayNameInput
-          )
-          if viewModel.isInSession {
-            dismiss()
-          }
-        }
       }
       .padding()
       .navigationTitle("Join Session")
@@ -52,9 +36,28 @@ struct JoinSessionSheet: View {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") { dismiss() }
         }
+        ToolbarItem(placement: .confirmationAction) {
+          if viewModel.isLoading {
+            ProgressView()
+          } else {
+            Button("Join") {
+              Task {
+                await viewModel.joinSession(
+                  joinCode: joinCodeInput,
+                  displayName: displayNameInput.isEmpty ? "Guest" : displayNameInput
+                )
+                if viewModel.isInSession {
+                  dismiss()
+                }
+              }
+            }
+            .disabled(joinCodeInput.count != 6)
+          }
+        }
       }
     }
-    .presentationDetents([.medium])
+    .presentationDetents([.medium, .large])
+    .presentationDragIndicator(.visible)
   }
 
   private var sessionCodeInput: some View {

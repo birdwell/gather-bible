@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Gather Bible
 //
-//  Updated to include session sync integration
+//  Updated to include session sync integration and iPad-optimized layout
 //
 
 import SwiftData
@@ -11,23 +11,27 @@ import YouVersionPlatformReader
 
 struct ContentView: View {
   @StateObject private var sessionViewModel = SessionViewModel()
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   var body: some View {
     TabView {
-      NavigationStack {
-        BibleReader()
-      }
-      .tabItem {
-        Label("Bible", systemImage: "book.fill")
+      Tab("Bible", systemImage: "book.fill") {
+        NavigationStack {
+          BibleReader()
+        }
       }
 
-      NavigationStack {
-        CommunityView()
-      }
-      .tabItem {
-        Label("Community", systemImage: "person.3.fill")
+      Tab("Community", systemImage: "person.3.fill") {
+        if horizontalSizeClass == .regular {
+          CommunityViewiPad()
+        } else {
+          NavigationStack {
+            CommunityView()
+          }
+        }
       }
     }
+    .tabViewStyle(.sidebarAdaptable)
     .environmentObject(sessionViewModel)
   }
 }

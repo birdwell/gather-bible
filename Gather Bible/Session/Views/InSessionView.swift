@@ -10,13 +10,18 @@ import SwiftUI
 /// View displayed when the user is in an active session
 struct InSessionView: View {
   @ObservedObject var viewModel: SessionViewModel
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   @State private var showingCreateDiscussion = false
   @State private var showingDraftDiscussions = false
   @State private var showingDiscussionResults = false
 
+  private var isRegularWidth: Bool {
+    horizontalSizeClass == .regular
+  }
+
   var body: some View {
-    VStack(spacing: 16) {
+    VStack(spacing: isRegularWidth ? 20 : 16) {
       SessionCodeBanner(
         code: viewModel.joinCode,
         isHost: viewModel.isHost
@@ -32,7 +37,6 @@ struct InSessionView: View {
         claimHostButton
       }
 
-      // Host discussion controls
       if viewModel.isHost {
         Divider()
         discussionSection
@@ -46,6 +50,7 @@ struct InSessionView: View {
         ProgressView()
       }
     }
+    .frame(maxWidth: isRegularWidth ? 560 : .infinity)
     .sheet(isPresented: $showingCreateDiscussion) {
       CreateDiscussionSheet(viewModel: viewModel)
     }

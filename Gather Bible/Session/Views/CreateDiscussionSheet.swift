@@ -36,17 +36,6 @@ struct CreateDiscussionSheet: View {
           .foregroundStyle(.tertiary)
         }
 
-        Spacer()
-
-        AsyncActionButton(
-          title: publishImmediately ? "Send Discussion" : "Save Draft",
-          isLoading: viewModel.isLoading,
-          isDisabled: trimmedQuestion.isEmpty
-        ) {
-          await viewModel.createDiscussion(
-            question: trimmedQuestion, publishImmediately: publishImmediately)
-          dismiss()
-        }
       }
       .padding()
       .navigationTitle("Create Discussion")
@@ -55,9 +44,24 @@ struct CreateDiscussionSheet: View {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") { dismiss() }
         }
+        ToolbarItem(placement: .confirmationAction) {
+          if viewModel.isLoading {
+            ProgressView()
+          } else {
+            Button(publishImmediately ? "Send" : "Save") {
+              Task {
+                await viewModel.createDiscussion(
+                  question: trimmedQuestion, publishImmediately: publishImmediately)
+                dismiss()
+              }
+            }
+            .disabled(trimmedQuestion.isEmpty)
+          }
+        }
       }
     }
-    .presentationDetents([.medium])
+    .presentationDetents([.medium, .large])
+    .presentationDragIndicator(.visible)
   }
 }
 

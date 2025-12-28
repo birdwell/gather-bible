@@ -6,7 +6,20 @@ import YouVersionPlatformCore
 struct BookAndChapterPickerSheet: View {
   @Bindable var viewModel: BibleReaderViewModel
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @State private var expandedBookId: String?
+
+  private var isRegularWidth: Bool {
+    horizontalSizeClass == .regular
+  }
+
+  private var columnCount: Int {
+    isRegularWidth ? 10 : 6
+  }
+
+  private var cellSize: CGFloat {
+    isRegularWidth ? 52 : 44
+  }
 
   var body: some View {
     NavigationStack {
@@ -26,6 +39,7 @@ struct BookAndChapterPickerSheet: View {
         }
       }
     }
+    .presentationDetents(isRegularWidth ? [.large] : [.medium, .large])
   }
 
   @ViewBuilder
@@ -71,9 +85,9 @@ struct BookAndChapterPickerSheet: View {
   }
 
   private func chapterGrid(bookId: String, chapterCount: Int) -> some View {
-    let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+    let columns = Array(repeating: GridItem(.flexible(), spacing: isRegularWidth ? 12 : 8), count: columnCount)
 
-    return LazyVGrid(columns: columns, spacing: 8) {
+    return LazyVGrid(columns: columns, spacing: isRegularWidth ? 12 : 8) {
       ForEach(1...chapterCount, id: \.self) { chapter in
         Button {
           viewModel.selectedBook = bookId
@@ -82,19 +96,19 @@ struct BookAndChapterPickerSheet: View {
           dismiss()
         } label: {
           Text("\(chapter)")
-            .font(.system(size: 14, weight: .medium))
+            .font(.system(size: isRegularWidth ? 16 : 14, weight: .medium))
             .foregroundStyle(
               viewModel.selectedBook == bookId && viewModel.selectedChapter == chapter
                 ? Color.white
                 : Color.primary
             )
-            .frame(width: 44, height: 44)
+            .frame(width: cellSize, height: cellSize)
             .background(
               viewModel.selectedBook == bookId && viewModel.selectedChapter == chapter
                 ? Color.accentColor
                 : Color(.systemGray5)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: isRegularWidth ? 10 : 8))
         }
         .buttonStyle(PlainButtonStyle())
       }

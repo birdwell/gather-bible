@@ -33,6 +33,27 @@ struct BibleReader: View {
 
 private struct ReaderContentView: View {
   @Bindable var viewModel: BibleReaderViewModel
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+  private var isRegularWidth: Bool {
+    horizontalSizeClass == .regular
+  }
+
+  private var horizontalPadding: CGFloat {
+    isRegularWidth ? 80 : 16
+  }
+
+  private var maxContentWidth: CGFloat {
+    isRegularWidth ? 720 : .infinity
+  }
+
+  private var buttonSize: CGFloat {
+    isRegularWidth ? 64 : 56
+  }
+
+  private var buttonIconSize: CGFloat {
+    isRegularWidth ? 24 : 20
+  }
 
   var body: some View {
     VStack(spacing: 0) {
@@ -44,8 +65,10 @@ private struct ReaderContentView: View {
             .id(
               "\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)"
             )
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .frame(maxWidth: maxContentWidth)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, isRegularWidth ? 24 : 12)
             .padding(.bottom, 100)
         }
 
@@ -67,9 +90,9 @@ private struct ReaderContentView: View {
     HStack {
       Button(action: { viewModel.previousChapter() }) {
         Image(systemName: "chevron.left")
-          .font(.system(size: 20, weight: .bold))
+          .font(.system(size: buttonIconSize, weight: .bold))
           .foregroundStyle(Color.primary)
-          .frame(width: 56, height: 56)
+          .frame(width: buttonSize, height: buttonSize)
           .background(.ultraThinMaterial)
           .clipShape(Circle())
           .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -82,9 +105,9 @@ private struct ReaderContentView: View {
 
       Button(action: { viewModel.nextChapter() }) {
         Image(systemName: "chevron.right")
-          .font(.system(size: 20, weight: .bold))
+          .font(.system(size: buttonIconSize, weight: .bold))
           .foregroundStyle(Color.primary)
-          .frame(width: 56, height: 56)
+          .frame(width: buttonSize, height: buttonSize)
           .background(.ultraThinMaterial)
           .clipShape(Circle())
           .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -93,8 +116,8 @@ private struct ReaderContentView: View {
       .sensoryFeedback(
         .impact(weight: .light), trigger: "\(viewModel.selectedBook).\(viewModel.selectedChapter)")
     }
-    .padding(.horizontal, 24)
-    .padding(.bottom, 24)
+    .padding(.horizontal, isRegularWidth ? 48 : 24)
+    .padding(.bottom, isRegularWidth ? 32 : 24)
   }
 }
 
