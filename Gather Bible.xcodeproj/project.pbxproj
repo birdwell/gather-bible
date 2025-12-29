@@ -52,32 +52,9 @@
 		60BAF3522EF6DD8E00C05EA5 /* Gather BibleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gather BibleUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		6036C9542EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"GoogleService-Info.plist",
-				icon.icon,
-			);
-			target = 60BAF3472EF6DD8E00C05EA5 /* Gather BibleTests */;
-		};
-		6036C9552EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleUITests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"GoogleService-Info.plist",
-				icon.icon,
-			);
-			target = 60BAF3512EF6DD8E00C05EA5 /* Gather BibleUITests */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		60BAF33B2EF6DD8D00C05EA5 /* Gather Bible */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				6036C9542EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleTests" target */,
-				6036C9552EF733E800D5CF69 /* Exceptions for "Gather Bible" folder in "Gather BibleUITests" target */,
-			);
 			path = "Gather Bible";
 			sourceTree = "<group>";
 		};

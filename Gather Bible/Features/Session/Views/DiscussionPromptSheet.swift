@@ -30,15 +30,6 @@ struct DiscussionPromptSheet: View {
         }
 
         Spacer()
-
-        AsyncActionButton(
-          title: "Submit",
-          isLoading: viewModel.isLoading,
-          isDisabled: trimmedResponse.isEmpty
-        ) {
-          await viewModel.submitDiscussionResponse(response: trimmedResponse)
-          dismiss()
-        }
       }
       .padding()
       .navigationTitle("Discussion")
@@ -48,6 +39,19 @@ struct DiscussionPromptSheet: View {
           Button("Skip") {
             viewModel.dismissDiscussionPrompt()
             dismiss()
+          }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+          if viewModel.isLoading {
+            ProgressView()
+          } else {
+            Button("Submit") {
+              Task {
+                await viewModel.submitDiscussionResponse(response: trimmedResponse)
+                dismiss()
+              }
+            }
+            .disabled(trimmedResponse.isEmpty)
           }
         }
       }

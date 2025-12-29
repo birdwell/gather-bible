@@ -91,7 +91,7 @@ final class BibleReaderViewModel {
   }
 
   func syncFromSession() {
-    guard let state = sessionViewModel?.sessionSync?.currentState else { return }
+    guard let state = sessionViewModel?.currentState else { return }
 
     selectedBook = state.book
     selectedChapter = state.chapter
@@ -176,12 +176,10 @@ final class BibleReaderViewModel {
 
         isLoadingVersions = false
 
-        if let niv = availableVersions.first(where: {
-          ($0.id == 111)
-        }) {
+        if let niv = availableVersions.first(where: { $0.id == 111 }) {
           selectedVersionId = niv.id
-        } else if availableVersions.first != nil {
-          selectedVersionId = availableVersions.first!.id
+        } else if let firstVersion = availableVersions.first {
+          selectedVersionId = firstVersion.id
         }
 
         await loadBooksForVersion()

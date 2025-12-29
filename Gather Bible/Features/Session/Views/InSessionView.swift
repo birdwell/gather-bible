@@ -100,10 +100,10 @@ struct InSessionView: View {
   // MARK: - Follow Host Toggle
 
   private var followHostToggle: some View {
-    Toggle("Follow Host", isOn: $viewModel.followHost)
-      .onChange(of: viewModel.followHost) { _, _ in
-        viewModel.toggleFollowHost()
-      }
+    Toggle("Follow Host", isOn: Binding(
+      get: { viewModel.followHost },
+      set: { _ in viewModel.toggleFollowHost() }
+    ))
   }
 
   // MARK: - Claim Host Button

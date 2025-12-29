@@ -33,8 +33,11 @@ struct BibleReader: View {
 
 private struct ReaderContentView: View {
   @Bindable var viewModel: BibleReaderViewModel
+  @Environment(\.readerSettings) private var readerSettings
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  @State private var showReaderSettings = false
 
   @ScaledMetric(relativeTo: .body) private var buttonSizeBase: CGFloat = 56
   @ScaledMetric(relativeTo: .body) private var buttonSizeRegular: CGFloat = 64
@@ -63,14 +66,15 @@ private struct ReaderContentView: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      NavigationHeader(viewModel: viewModel)
+      NavigationHeader(
+        viewModel: viewModel,
+        onReaderSettingsTap: { showReaderSettings = true }
+      )
 
       ZStack(alignment: .bottom) {
         SyncableScrollView(viewModel: viewModel) {
-          BibleTextView(viewModel.bibleReference)
-            .id(
-              "\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)"
-            )
+          BibleTextView(viewModel.bibleReference, textOptions: readerSettings.textOptions)
+            .id("\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)")
             .frame(maxWidth: maxContentWidth)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, horizontalPadding)
@@ -86,6 +90,10 @@ private struct ReaderContentView: View {
         viewModel: viewModel,
         onDismiss: { viewModel.showVersionPicker = false }
       )
+    }
+    .sheet(isPresented: $showReaderSettings) {
+      ReaderSettingsSheet()
+        .presentationDetents([.medium, .large])
     }
     .onChange(of: viewModel.selectedVersionId) { _, _ in
       Task { await viewModel.loadBooksForVersion() }
