@@ -5,7 +5,6 @@
 //  Updated to include session sync integration and iPad-optimized layout
 //
 
-import SwiftData
 import SwiftUI
 import YouVersionPlatformReader
 

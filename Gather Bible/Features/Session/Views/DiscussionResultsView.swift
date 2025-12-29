@@ -118,14 +118,7 @@ private struct ResponseCard: View {
   }
 }
 
-extension TimeInterval {
-  fileprivate var relativeFormatted: String {
-    let date = Date(timeIntervalSince1970: self / 1000)
-    let formatter = RelativeDateTimeFormatter()
-    formatter.unitsStyle = .abbreviated
-    return formatter.localizedString(for: date, relativeTo: Date())
-  }
-}
+
 
 #Preview {
   DiscussionResultsView(

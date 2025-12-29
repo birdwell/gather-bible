@@ -60,7 +60,7 @@ private struct DraftRow: View {
         .lineLimit(2)
 
       HStack {
-        Text(discussion.createdAt.dateFormatted)
+        Text(discussion.createdAt.createdDateFormatted)
           .font(.caption)
           .foregroundStyle(.tertiary)
 
@@ -75,12 +75,7 @@ private struct DraftRow: View {
   }
 }
 
-extension TimeInterval {
-  fileprivate var dateFormatted: String {
-    let date = Date(timeIntervalSince1970: self / 1000)
-    return "Created \(date.formatted(date: .abbreviated, time: .shortened))"
-  }
-}
+
 
 #Preview {
   DraftDiscussionsView(viewModel: SessionViewModel())

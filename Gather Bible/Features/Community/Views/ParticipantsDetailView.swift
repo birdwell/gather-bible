@@ -26,23 +26,7 @@ struct ParticipantsDetailView: View {
   private var participantsList: some View {
     List {
       ForEach(viewModel.participants) { participant in
-        HStack {
-          Circle()
-            .fill(participant.active ? .green : .gray)
-            .frame(width: 10, height: 10)
-
-          Text(participant.displayName)
-            .font(.body)
-
-          Spacer()
-
-          if participant.isHost {
-            Label("Host", systemImage: "crown.fill")
-              .font(.caption)
-              .foregroundStyle(.orange)
-          }
-        }
-        .padding(.vertical, 4)
+        ParticipantRow(participant: participant)
       }
     }
     .listStyle(.insetGrouped)
