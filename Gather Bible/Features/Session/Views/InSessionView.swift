@@ -15,6 +15,8 @@ struct InSessionView: View {
   @State private var showingCreateDiscussion = false
   @State private var showingDraftDiscussions = false
   @State private var showingDiscussionResults = false
+  @State private var showingAddToQueue = false
+  @State private var showingQueueList = false
 
   private var isRegularWidth: Bool {
     horizontalSizeClass == .regular
@@ -38,6 +40,8 @@ struct InSessionView: View {
       }
 
       if viewModel.isHost {
+        Divider()
+        queueSection
         Divider()
         discussionSection
       }
@@ -69,6 +73,12 @@ struct InSessionView: View {
       )
     ) {
       DiscussionPromptSheet(viewModel: viewModel)
+    }
+    .sheet(isPresented: $showingAddToQueue) {
+      AddToQueueSheet(sessionViewModel: viewModel)
+    }
+    .sheet(isPresented: $showingQueueList) {
+      QueueListView(viewModel: viewModel)
     }
   }
 
@@ -104,6 +114,82 @@ struct InSessionView: View {
       get: { viewModel.followHost },
       set: { _ in viewModel.toggleFollowHost() }
     ))
+  }
+
+  // MARK: - Queue Section
+
+  private var queueSection: some View {
+    VStack(spacing: 12) {
+      if viewModel.hasQueue {
+        Button {
+          showingQueueList = true
+        } label: {
+          HStack {
+            Image(systemName: "list.number")
+              .foregroundStyle(.purple)
+
+            VStack(alignment: .leading, spacing: 2) {
+              Text("Reading Queue")
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+              if let currentItem = viewModel.currentQueueItem {
+                Text(currentItem.displayLabel)
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+                  .lineLimit(1)
+              }
+            }
+
+            Spacer()
+
+            Text("\(viewModel.currentQueueIndex + 1)/\(viewModel.queue.count)")
+              .font(.caption)
+              .fontWeight(.medium)
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(Color.purple.opacity(0.2))
+              .clipShape(Capsule())
+
+            Image(systemName: "chevron.right")
+              .font(.caption)
+              .foregroundStyle(.tertiary)
+          }
+          .padding(12)
+          .background(Color(.secondarySystemBackground))
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+
+        HStack(spacing: 12) {
+          Button {
+            Task { await viewModel.goToPreviousQueueItem() }
+          } label: {
+            Label("Back", systemImage: "chevron.left")
+              .frame(maxWidth: .infinity)
+          }
+          .buttonStyle(.bordered)
+          .disabled(!viewModel.canGoToPreviousQueueItem)
+
+          Button {
+            Task { await viewModel.goToNextQueueItem() }
+          } label: {
+            Label("Next", systemImage: "chevron.right")
+              .frame(maxWidth: .infinity)
+          }
+          .buttonStyle(.bordered)
+          .disabled(!viewModel.canGoToNextQueueItem)
+        }
+      }
+
+      Button {
+        showingAddToQueue = true
+      } label: {
+        Label("Add to Queue", systemImage: "plus.circle.fill")
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.bordered)
+    }
   }
 
   // MARK: - Claim Host Button

@@ -22,6 +22,7 @@ final class FirebaseSessionRepository: SessionRepository {
   private let participantsSubject = CurrentValueSubject<[SessionParticipant], Never>([])
   private let discussionsSubject = CurrentValueSubject<[Discussion], Never>([])
   private let discussionResponsesSubject = CurrentValueSubject<[DiscussionResponse], Never>([])
+  private let queueSubject = CurrentValueSubject<[QueuedReference], Never>([])
 
   var currentStatePublisher: AnyPublisher<SessionState?, Never> {
     currentStateSubject.eraseToAnyPublisher()
@@ -39,6 +40,10 @@ final class FirebaseSessionRepository: SessionRepository {
     discussionResponsesSubject.eraseToAnyPublisher()
   }
 
+  var queuePublisher: AnyPublisher<[QueuedReference], Never> {
+    queueSubject.eraseToAnyPublisher()
+  }
+
   // MARK: - Firebase References
 
   private var stateRef: DatabaseReference?
@@ -46,6 +51,7 @@ final class FirebaseSessionRepository: SessionRepository {
   private var discussionsRef: DatabaseReference?
   private var activeDiscussionRef: DatabaseReference?
   private var discussionResponsesRef: DatabaseReference?
+  private var queueRef: DatabaseReference?
 
   // MARK: - Firebase Observers
 
@@ -54,6 +60,7 @@ final class FirebaseSessionRepository: SessionRepository {
   private var discussionsObserver: UInt?
   private var activeDiscussionObserver: UInt?
   private var discussionResponsesObserver: UInt?
+  private var queueObserver: UInt?
 
   // MARK: - Throttling
 
@@ -235,6 +242,23 @@ final class FirebaseSessionRepository: SessionRepository {
       }
       self?.startListeningToResponses(sessionId: sessionId, discussionId: discussionId)
     }
+
+    queueRef = db.child("sessions").child(sessionId).child("queue")
+
+    queueObserver = queueRef?.observe(.value) { [weak self] snapshot in
+      var queue: [QueuedReference] = []
+
+      for child in snapshot.children {
+        guard let snapshot = child as? DataSnapshot,
+          let dict = snapshot.value as? [String: Any],
+          let reference = QueuedReference(from: dict)
+        else {
+          continue
+        }
+        queue.append(reference)
+      }
+      self?.queueSubject.send(queue)
+    }
   }
 
   private func startListeningToResponses(sessionId: String, discussionId: String) {
@@ -278,6 +302,9 @@ final class FirebaseSessionRepository: SessionRepository {
     if let discussionResponsesObserver = discussionResponsesObserver {
       discussionResponsesRef?.removeObserver(withHandle: discussionResponsesObserver)
     }
+    if let queueObserver = queueObserver {
+      queueRef?.removeObserver(withHandle: queueObserver)
+    }
 
     stateRef?.keepSynced(false)
     stateRef = nil
@@ -285,16 +312,19 @@ final class FirebaseSessionRepository: SessionRepository {
     discussionsRef = nil
     activeDiscussionRef = nil
     discussionResponsesRef = nil
+    queueRef = nil
     stateObserver = nil
     participantsObserver = nil
     discussionsObserver = nil
     activeDiscussionObserver = nil
     discussionResponsesObserver = nil
+    queueObserver = nil
 
     currentStateSubject.send(nil)
     participantsSubject.send([])
     discussionsSubject.send([])
     discussionResponsesSubject.send([])
+    queueSubject.send([])
   }
 
   func setupDisconnectHandler(sessionId: String, userId: String, isHost: Bool) {
@@ -445,6 +475,50 @@ final class FirebaseSessionRepository: SessionRepository {
   func deleteDiscussion(sessionId: String, discussionId: String) async throws {
     try await db.child("sessions").child(sessionId).child("discussions").child(discussionId)
       .removeValue()
+  }
+
+  // MARK: - Queue Management
+
+  func addToQueue(sessionId: String, reference: QueuedReference) async throws {
+    try await db.child("sessions").child(sessionId).child("queue").child(reference.id)
+      .setValue(reference.toDictionary())
+  }
+
+  func removeFromQueue(sessionId: String, referenceId: String) async throws {
+    try await db.child("sessions").child(sessionId).child("queue").child(referenceId)
+      .removeValue()
+  }
+
+  func reorderQueue(sessionId: String, queue: [QueuedReference]) async throws {
+    var queueData: [String: Any] = [:]
+    for reference in queue {
+      queueData[reference.id] = reference.toDictionary()
+    }
+    try await db.child("sessions").child(sessionId).child("queue").setValue(queueData)
+  }
+
+  func navigateToQueueIndex(
+    sessionId: String,
+    index: Int,
+    reference: QueuedReference,
+    versionId: Int
+  ) async throws {
+    let verseId = "\(reference.book).\(reference.chapter).\(reference.startVerse ?? 1)"
+
+    let payload: [String: Any] = [
+      "book": reference.book,
+      "chapter": reference.chapter,
+      "startVerseId": verseId,
+      "verseOffset": 0.0,
+      "scrolling": false,
+      "versionId": versionId,
+      "currentQueueIndex": index,
+      "visibleStartVerse": reference.startVerse as Any,
+      "visibleEndVerse": reference.endVerse as Any,
+      "updatedAt": ServerValue.timestamp(),
+    ]
+
+    try await db.child("sessions").child(sessionId).child("state").updateChildValues(payload)
   }
 }
 

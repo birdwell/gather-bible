@@ -60,12 +60,6 @@ final class BibleReaderViewModel {
   // MARK: - Initialization
   init(sessionViewModel: SessionViewModel? = nil) {
     self.sessionViewModel = sessionViewModel
-    setupBindings()
-  }
-
-  // MARK: - Setup
-  private func setupBindings() {
-    // Version change observation is handled by onVersionChange() called from view
   }
 
   func subscribeToSessionUpdates() {

@@ -19,6 +19,9 @@ struct SessionState: Codable {
   let versionId: Int
   let updatedAt: Double?
   let active: Bool
+  let currentQueueIndex: Int
+  let visibleStartVerse: Int?
+  let visibleEndVerse: Int?
 
   /// Initialize from Firebase dictionary
   init?(from dictionary: [String: Any]) {
@@ -44,5 +47,8 @@ struct SessionState: Codable {
     self.versionId = dictionary["versionId"] as? Int ?? 111
     self.updatedAt = dictionary["updatedAt"] as? Double
     self.active = active
+    self.currentQueueIndex = dictionary["currentQueueIndex"] as? Int ?? 0
+    self.visibleStartVerse = dictionary["visibleStartVerse"] as? Int
+    self.visibleEndVerse = dictionary["visibleEndVerse"] as? Int
   }
 }

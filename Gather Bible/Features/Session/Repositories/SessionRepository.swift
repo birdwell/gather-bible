@@ -18,6 +18,7 @@ protocol SessionRepository: AnyObject {
   var participantsPublisher: AnyPublisher<[SessionParticipant], Never> { get }
   var discussionsPublisher: AnyPublisher<[Discussion], Never> { get }
   var discussionResponsesPublisher: AnyPublisher<[DiscussionResponse], Never> { get }
+  var queuePublisher: AnyPublisher<[QueuedReference], Never> { get }
 
   // MARK: - Session Lifecycle
 
@@ -101,4 +102,23 @@ protocol SessionRepository: AnyObject {
 
   /// Delete a draft discussion
   func deleteDiscussion(sessionId: String, discussionId: String) async throws
+
+  // MARK: - Queue Management
+
+  /// Add a reference to the queue
+  func addToQueue(sessionId: String, reference: QueuedReference) async throws
+
+  /// Remove a reference from the queue
+  func removeFromQueue(sessionId: String, referenceId: String) async throws
+
+  /// Reorder the queue
+  func reorderQueue(sessionId: String, queue: [QueuedReference]) async throws
+
+  /// Navigate to a specific queue index and update session state
+  func navigateToQueueIndex(
+    sessionId: String,
+    index: Int,
+    reference: QueuedReference,
+    versionId: Int
+  ) async throws
 }

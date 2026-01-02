@@ -43,6 +43,11 @@ class SessionViewModel: ObservableObject {
   @Published var discussionResponses: [DiscussionResponse] = []
   @Published var discussions: [Discussion] = []
 
+  // MARK: - Queue State
+
+  @Published var queue: [QueuedReference] = []
+  @Published var currentQueueIndex: Int = 0
+
   // MARK: - Private
 
   private var cancellables = Set<AnyCancellable>()
@@ -104,6 +109,31 @@ class SessionViewModel: ObservableObject {
     discussions.filter { $0.status == .completed }
   }
 
+  var hasQueue: Bool {
+    !queue.isEmpty
+  }
+
+  var canGoToPreviousQueueItem: Bool {
+    currentQueueIndex > 0
+  }
+
+  var canGoToNextQueueItem: Bool {
+    currentQueueIndex < queue.count - 1
+  }
+
+  var currentQueueItem: QueuedReference? {
+    guard currentQueueIndex >= 0 && currentQueueIndex < queue.count else { return nil }
+    return queue[currentQueueIndex]
+  }
+
+  var visibleStartVerse: Int? {
+    currentState?.visibleStartVerse
+  }
+
+  var visibleEndVerse: Int? {
+    currentState?.visibleEndVerse
+  }
+
   // MARK: - Init
 
   init(repository: SessionRepository? = nil) {
@@ -146,6 +176,21 @@ class SessionViewModel: ObservableObject {
       .receive(on: DispatchQueue.main)
       .sink { [weak self] responses in
         self?.discussionResponses = responses
+      }
+      .store(in: &cancellables)
+
+    repository.queuePublisher
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] queue in
+        self?.queue = queue
+      }
+      .store(in: &cancellables)
+
+    repository.currentStatePublisher
+      .receive(on: DispatchQueue.main)
+      .compactMap { $0?.currentQueueIndex }
+      .sink { [weak self] index in
+        self?.currentQueueIndex = index
       }
       .store(in: &cancellables)
   }
@@ -237,6 +282,8 @@ class SessionViewModel: ObservableObject {
     activeDiscussion = nil
     followHost = true
     isScrolling = false
+    queue = []
+    currentQueueIndex = 0
   }
 
   // MARK: - Navigation
@@ -403,6 +450,78 @@ class SessionViewModel: ObservableObject {
 
   func dismissDiscussionPrompt() {
     showDiscussionPrompt = false
+  }
+
+  // MARK: - Queue Management
+
+  func addToQueue(reference: QueuedReference) async {
+    guard isHost, let sessionId = sessionId else { return }
+
+    isLoading = true
+    errorMessage = nil
+
+    do {
+      try await repository.addToQueue(sessionId: sessionId, reference: reference)
+    } catch {
+      handleError(error)
+    }
+
+    isLoading = false
+  }
+
+  func removeFromQueue(referenceId: String) async {
+    guard isHost, let sessionId = sessionId else { return }
+
+    isLoading = true
+    errorMessage = nil
+
+    do {
+      try await repository.removeFromQueue(sessionId: sessionId, referenceId: referenceId)
+    } catch {
+      handleError(error)
+    }
+
+    isLoading = false
+  }
+
+  func reorderQueue(queue: [QueuedReference]) async {
+    guard isHost, let sessionId = sessionId else { return }
+
+    do {
+      try await repository.reorderQueue(sessionId: sessionId, queue: queue)
+    } catch {
+      handleError(error)
+    }
+  }
+
+  func goToNextQueueItem() async {
+    guard isHost, canGoToNextQueueItem else { return }
+    await navigateToQueueIndex(currentQueueIndex + 1)
+  }
+
+  func goToPreviousQueueItem() async {
+    guard isHost, canGoToPreviousQueueItem else { return }
+    await navigateToQueueIndex(currentQueueIndex - 1)
+  }
+
+  func navigateToQueueIndex(_ index: Int) async {
+    guard isHost,
+      let sessionId = sessionId,
+      index >= 0 && index < queue.count
+    else { return }
+
+    let reference = queue[index]
+
+    do {
+      try await repository.navigateToQueueIndex(
+        sessionId: sessionId,
+        index: index,
+        reference: reference,
+        versionId: currentVersionId
+      )
+    } catch {
+      handleError(error)
+    }
   }
 
   // MARK: - Error Handling

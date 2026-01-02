@@ -6,7 +6,7 @@ struct VersionPickerSheet: View {
   let onDismiss: () -> Void
 
   var body: some View {
-    NavigationView {
+    NavigationStack {
       List(viewModel.availableVersions, id: \.id) { version in
         HStack {
           VStack(alignment: .leading, spacing: 4) {
