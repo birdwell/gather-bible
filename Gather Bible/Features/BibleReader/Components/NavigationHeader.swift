@@ -75,15 +75,15 @@ struct NavigationHeader: View {
     else {
       return "Loading..."
     }
+    
     return "\(book.title ?? "Unknown") \(viewModel.selectedChapter)"
   }
 
   private var versionAbbreviation: String {
-    if let version = viewModel.availableVersions.first(where: {
-      $0.id == viewModel.selectedVersionId
-    }) {
+    if let version = viewModel.selectedVersion {
       return (version.localizedAbbreviation ?? "").uppercased()
     }
+
     return "..."
   }
 }

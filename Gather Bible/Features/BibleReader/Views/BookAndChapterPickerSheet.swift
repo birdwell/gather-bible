@@ -66,7 +66,6 @@ struct BookAndChapterPickerSheet: View {
             .font(.caption)
             .foregroundStyle(Color.secondary)
             .rotationEffect(.degrees(isExpanded ? 0 : -90))
-            .animation(.easeInOut(duration: 0.2), value: isExpanded)
             .frame(width: 16, height: 16)
         }
         .contentShape(Rectangle())
@@ -81,7 +80,7 @@ struct BookAndChapterPickerSheet: View {
           .transition(.opacity)
       }
     }
-    .animation(.spring(response: 0.35, dampingFraction: 0.85), value: expandedBookId)
+    .animation(nil, value: expandedBookId)
   }
 
   private func chapterGrid(bookId: String, chapterCount: Int) -> some View {

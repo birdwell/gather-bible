@@ -21,6 +21,10 @@ final class BibleReaderViewModel {
     )
   }
 
+  var selectedVersion: BibleVersion? {
+    availableVersions.first(where: { $0.id == selectedVersionId })
+  }
+
   // MARK: - Data State
   var availableVersions: [BibleVersion] = []
   var selectedVersionBooks: [BibleBook] = []
