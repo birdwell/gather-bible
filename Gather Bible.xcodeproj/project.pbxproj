@@ -23,10 +23,13 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		602C09FD2F0CA8A800EF54FB /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		602C09FE2F0CA8A800EF54FB /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C94C2EF72D9800D5CF69 /* YouVersionPlatform */; };
 		6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */; };
 		6036C95A2EF7345E00D5CF69 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C9592EF7345E00D5CF69 /* FirebaseDatabase */; };
 		6036C97D2EF7B71400D5CF69 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 6036C97C2EF7B71400D5CF69 /* FirebaseFunctions */; };
+		765076542B8C4D2C901447B0 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 98CBB9D81E9443DEB6CCAC93 /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +82,7 @@
 				6036C9582EF7345E00D5CF69 /* FirebaseAnalytics in Frameworks */,
 				6036C94D2EF72D9800D5CF69 /* YouVersionPlatform in Frameworks */,
 				6036C97D2EF7B71400D5CF69 /* FirebaseFunctions in Frameworks */,
+				765076542B8C4D2C901447B0 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +90,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				602C09FD2F0CA8A800EF54FB /* (null) in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +98,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				602C09FE2F0CA8A800EF54FB /* (null) in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +143,7 @@
 				60BAF3352EF6DD8D00C05EA5 /* Sources */,
 				60BAF3362EF6DD8D00C05EA5 /* Frameworks */,
 				60BAF3372EF6DD8D00C05EA5 /* Resources */,
+				04C72EBC5F774582AED1113A /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -151,6 +158,7 @@
 				6036C9572EF7345E00D5CF69 /* FirebaseAnalytics */,
 				6036C9592EF7345E00D5CF69 /* FirebaseDatabase */,
 				6036C97C2EF7B71400D5CF69 /* FirebaseFunctions */,
+				98CBB9D81E9443DEB6CCAC93 /* Sentry */,
 			);
 			productName = "Gather Bible";
 			productReference = 60BAF3392EF6DD8D00C05EA5 /* Gather Bible.app */;
@@ -243,6 +251,7 @@
 			packageReferences = (
 				6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */,
 				6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				238EB8F641394BB18DEA6584 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 60BAF33A2EF6DD8D00C05EA5 /* Products */;
@@ -282,6 +291,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		04C72EBC5F774582AED1113A /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script is responsible for uploading debug symbols and source context for Sentry.\nif which sentry-cli >/dev/null; then\n  export SENTRY_ORG=josh-birdwell\n  export SENTRY_PROJECT=gather-bible\n  ERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\n  if [ ! $? -eq 0 ]; then\n    echo \"warning: sentry-cli - $ERROR\"\n  fi\nelse\n  echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
 		6036C9A22EF9E3F100D5CF69 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -488,11 +512,15 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = HDMU7Y5UNB;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Gather-Bible-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -528,11 +556,15 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = HDMU7Y5UNB;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Gather-Bible-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -695,6 +727,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		238EB8F641394BB18DEA6584 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 		6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/youversion/platform-sdk-swift.git";
@@ -733,6 +773,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFunctions;
+		};
+		98CBB9D81E9443DEB6CCAC93 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 238EB8F641394BB18DEA6584 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

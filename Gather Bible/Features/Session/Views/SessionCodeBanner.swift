@@ -15,6 +15,7 @@ struct SessionCodeBanner: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @State private var codeCopied = false
+  @State private var showingQRCode = false
 
   @ScaledMetric(relativeTo: .largeTitle) private var codeFontSize: CGFloat = 34
 
@@ -72,9 +73,21 @@ struct SessionCodeBanner: View {
       }
 
       if isHost {
-        Label("You're hosting", systemImage: "crown.fill")
-          .font(isRegularWidth ? .subheadline : .caption)
-          .foregroundStyle(.orange)
+        HStack(spacing: 12) {
+          Label("You're hosting", systemImage: "crown.fill")
+            .font(isRegularWidth ? .subheadline : .caption)
+            .foregroundStyle(.orange)
+
+          Button {
+            showingQRCode = true
+          } label: {
+            Label("QR Code", systemImage: "qrcode")
+              .font(isRegularWidth ? .subheadline : .caption)
+          }
+          .buttonStyle(.bordered)
+          .accessibilityLabel("Show QR code")
+          .accessibilityHint("Double tap to display a QR code for others to scan and join")
+        }
       }
     }
     .frame(maxWidth: .infinity)
@@ -84,6 +97,9 @@ struct SessionCodeBanner: View {
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: codeCopied)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(bannerAccessibilityLabel)
+    .sheet(isPresented: $showingQRCode) {
+      SessionQRCodeView(sessionCode: code)
+    }
   }
 
   private func copyCode() {

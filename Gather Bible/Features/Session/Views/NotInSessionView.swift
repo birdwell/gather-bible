@@ -11,6 +11,7 @@ import SwiftUI
 struct NotInSessionView: View {
   @ObservedObject var viewModel: SessionViewModel
   @Binding var showingJoinSheet: Bool
+  @State private var showingCreateSheet = false
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
   private var isRegularWidth: Bool {
@@ -57,7 +58,7 @@ struct NotInSessionView: View {
   private var actionButtons: some View {
     VStack(spacing: isRegularWidth ? 16 : 12) {
       Button {
-        Task { await viewModel.createSession() }
+        showingCreateSheet = true
       } label: {
         Label("Create Session", systemImage: "plus.circle.fill")
           .frame(maxWidth: .infinity)
@@ -77,6 +78,9 @@ struct NotInSessionView: View {
       .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
       .accessibilityHint("Double tap to join an existing session with a code")
+    }
+    .sheet(isPresented: $showingCreateSheet) {
+      CreateSessionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)
     }
   }
 }

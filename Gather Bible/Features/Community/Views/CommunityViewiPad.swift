@@ -27,6 +27,7 @@ struct CommunityViewiPad: View {
   @EnvironmentObject var sessionViewModel: SessionViewModel
   @State private var selectedSection: CommunitySection? = .session
   @State private var columnVisibility: NavigationSplitViewVisibility = .all
+  @State private var showingCreateSheet = false
 
   var body: some View {
     NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -106,7 +107,7 @@ struct CommunityViewiPad: View {
   private var quickActions: some View {
     VStack(spacing: 12) {
       Button {
-        Task { await sessionViewModel.createSession() }
+        showingCreateSheet = true
       } label: {
         Label("Create Session", systemImage: "plus.circle.fill")
           .frame(maxWidth: .infinity)
@@ -116,6 +117,9 @@ struct CommunityViewiPad: View {
       .disabled(sessionViewModel.isLoading)
     }
     .padding(.vertical, 8)
+    .sheet(isPresented: $showingCreateSheet) {
+      CreateSessionSheet(viewModel: sessionViewModel, isPresented: $showingCreateSheet)
+    }
   }
 
   // MARK: - Detail View

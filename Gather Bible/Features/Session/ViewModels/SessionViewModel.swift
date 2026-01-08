@@ -7,6 +7,7 @@
 
 import Combine
 import Foundation
+import Sentry
 import SwiftUI
 
 /// View model for managing Bible reading sessions
@@ -15,6 +16,7 @@ class SessionViewModel: ObservableObject {
   // MARK: - Dependencies
 
   private let repository: SessionRepository
+  private let nearbyService: NearbySessionService
 
   // MARK: - Session State
 
@@ -29,6 +31,7 @@ class SessionViewModel: ObservableObject {
   @Published var errorMessage: String?
   @Published var isLoading = false
   @Published var showDiscussionPrompt = false
+  @Published var pendingJoinCode: String?
 
   // MARK: - Sync State
 
@@ -42,6 +45,11 @@ class SessionViewModel: ObservableObject {
   @Published var activeDiscussion: Discussion?
   @Published var discussionResponses: [DiscussionResponse] = []
   @Published var discussions: [Discussion] = []
+
+  // MARK: - Nearby Discovery State
+
+  @Published private(set) var nearbySessions: [DiscoveredSession] = []
+  @Published private(set) var isBrowsingNearby = false
 
   // MARK: - Private
 
@@ -106,8 +114,9 @@ class SessionViewModel: ObservableObject {
 
   // MARK: - Init
 
-  init(repository: SessionRepository? = nil) {
+  init(repository: SessionRepository? = nil, nearbyService: NearbySessionService? = nil) {
     self.repository = repository ?? FirebaseSessionRepository()
+    self.nearbyService = nearbyService ?? NearbySessionService()
     setupSubscriptions()
   }
 
@@ -148,11 +157,23 @@ class SessionViewModel: ObservableObject {
         self?.discussionResponses = responses
       }
       .store(in: &cancellables)
+
+    nearbyService.$nearbySessions
+      .receive(on: DispatchQueue.main)
+      .assign(to: &$nearbySessions)
+
+    nearbyService.$isBrowsing
+      .receive(on: DispatchQueue.main)
+      .assign(to: &$isBrowsingNearby)
   }
 
   // MARK: - Session Lifecycle
 
-  func createSession(initialBook: String = "GEN", initialChapter: Int = 1) async {
+  func createSession(
+    hostDisplayName: String = "Host",
+    initialBook: String = "GEN",
+    initialChapter: Int = 1
+  ) async {
     isLoading = true
     errorMessage = nil
 
@@ -176,7 +197,14 @@ class SessionViewModel: ObservableObject {
       self.isHost = true
       self.isInSession = true
 
+      nearbyService.startAdvertising(joinCode: joinCode, hostName: hostDisplayName)
+
     } catch {
+      SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: "createSession", key: "operation")
+        scope.setExtra(value: initialBook, key: "initialBook")
+        scope.setExtra(value: initialChapter, key: "initialChapter")
+      }
       handleError(error)
     }
 
@@ -204,7 +232,14 @@ class SessionViewModel: ObservableObject {
       self.isHost = false
       self.isInSession = true
 
+      nearbyService.stopBrowsing()
+
     } catch {
+      SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: "joinSession", key: "operation")
+        scope.setExtra(value: joinCode, key: "joinCode")
+        scope.setExtra(value: displayName, key: "displayName")
+      }
       handleError(error)
     }
 
@@ -237,6 +272,17 @@ class SessionViewModel: ObservableObject {
     activeDiscussion = nil
     followHost = true
     isScrolling = false
+    nearbyService.stopAll()
+  }
+
+  // MARK: - Nearby Discovery
+
+  func startBrowsingForNearbySessions() {
+    nearbyService.startBrowsing()
+  }
+
+  func stopBrowsingForNearbySessions() {
+    nearbyService.stopBrowsing()
   }
 
   // MARK: - Navigation

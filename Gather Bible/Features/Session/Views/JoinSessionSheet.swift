@@ -14,22 +14,46 @@ struct JoinSessionSheet: View {
 
   @State private var joinCodeInput = ""
   @State private var displayNameInput = ""
+  @FocusState private var isNameFieldFocused: Bool
+
+  init(viewModel: SessionViewModel, isPresented: Binding<Bool>, initialCode: String? = nil) {
+    self._viewModel = ObservedObject(wrappedValue: viewModel)
+    self._isPresented = isPresented
+    self._joinCodeInput = State(initialValue: initialCode ?? "")
+  }
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 24) {
-        sessionCodeInput
+      ScrollView {
+        VStack(spacing: 24) {
+          FormField(label: "Your Name", helper: "This is how others will see you") {
+            TextField("Enter your name", text: $displayNameInput)
+              .focused($isNameFieldFocused)
+              .padding()
+              .background(Color(.secondarySystemBackground))
+              .clipShape(RoundedRectangle(cornerRadius: 12))
+          }
 
-        FormField(label: "Your Name", helper: "This is how others will see you") {
-          TextField("Enter your name", text: $displayNameInput)
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+          NearbySessionsView(viewModel: viewModel) { session in
+            Task {
+              await viewModel.joinSession(
+                joinCode: session.joinCode,
+                displayName: displayNameInput.isEmpty ? "Guest" : displayNameInput
+              )
+              if viewModel.isInSession {
+                dismiss()
+              }
+            }
+          }
+
+          divider
+
+          sessionCodeInput
+
+          errorMessage
         }
-
-        errorMessage
+        .padding()
       }
-      .padding()
       .navigationTitle("Join Session")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -58,6 +82,9 @@ struct JoinSessionSheet: View {
     }
     .presentationDetents([.medium, .large])
     .presentationDragIndicator(.visible)
+    .onAppear {
+      isNameFieldFocused = true
+    }
   }
 
   private var sessionCodeInput: some View {
@@ -98,10 +125,27 @@ struct JoinSessionSheet: View {
     }
   }
 
+  private var divider: some View {
+    HStack {
+      Rectangle()
+        .fill(Color(.separator))
+        .frame(height: 1)
+
+      Text("or enter code")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+
+      Rectangle()
+        .fill(Color(.separator))
+        .frame(height: 1)
+    }
+  }
+
   private func dismiss() {
     isPresented = false
     joinCodeInput = ""
     displayNameInput = ""
+    viewModel.stopBrowsingForNearbySessions()
   }
 }
 

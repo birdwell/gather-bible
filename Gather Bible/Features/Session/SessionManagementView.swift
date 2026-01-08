@@ -11,6 +11,7 @@ import SwiftUI
 struct SessionManagementView: View {
   @ObservedObject var viewModel: SessionViewModel
   @State private var showingJoinSheet = false
+  @State private var pendingCodeForSheet: String?
 
   var body: some View {
     VStack(spacing: 16) {
@@ -26,8 +27,23 @@ struct SessionManagementView: View {
     .sheet(isPresented: $showingJoinSheet) {
       JoinSessionSheet(
         viewModel: viewModel,
-        isPresented: $showingJoinSheet
+        isPresented: $showingJoinSheet,
+        initialCode: pendingCodeForSheet
       )
+    }
+    .onChange(of: viewModel.pendingJoinCode) { _, newCode in
+      if let code = newCode, !viewModel.isInSession {
+        pendingCodeForSheet = code
+        showingJoinSheet = true
+        viewModel.pendingJoinCode = nil
+      }
+    }
+    .onAppear {
+      if let code = viewModel.pendingJoinCode, !viewModel.isInSession {
+        pendingCodeForSheet = code
+        showingJoinSheet = true
+        viewModel.pendingJoinCode = nil
+      }
     }
   }
 }

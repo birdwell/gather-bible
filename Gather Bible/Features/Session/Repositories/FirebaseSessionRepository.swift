@@ -9,6 +9,7 @@ import Combine
 import FirebaseDatabase
 import FirebaseFunctions
 import Foundation
+import Sentry
 
 final class FirebaseSessionRepository: SessionRepository {
   // MARK: - Firebase
@@ -69,35 +70,50 @@ final class FirebaseSessionRepository: SessionRepository {
   // MARK: - Session Lifecycle
 
   func generateJoinCode() async throws -> String {
-    let result = try await functions.httpsCallable("generateUniqueJoinCode").call()
+    do {
+      let result = try await functions.httpsCallable("generateUniqueJoinCode").call()
 
-    guard let data = result.data as? [String: Any],
-      let joinCode = data["joinCode"] as? String
-    else {
-      throw SessionRepositoryError.invalidResponse
+      guard let data = result.data as? [String: Any],
+        let joinCode = data["joinCode"] as? String
+      else {
+        throw SessionRepositoryError.invalidResponse
+      }
+
+      return joinCode
+    } catch {
+      SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: "generateJoinCode", key: "cloudFunction")
+      }
+      throw error
     }
-
-    return joinCode
   }
 
   func lookupSession(joinCode: String) async throws -> String {
-    let result = try await functions.httpsCallable("lookupJoinCode").call(["joinCode": joinCode])
+    do {
+      let result = try await functions.httpsCallable("lookupJoinCode").call(["joinCode": joinCode])
 
-    guard let data = result.data as? [String: Any],
-      let status = data["status"] as? String
-    else {
-      throw SessionRepositoryError.invalidResponse
+      guard let data = result.data as? [String: Any],
+        let status = data["status"] as? String
+      else {
+        throw SessionRepositoryError.invalidResponse
+      }
+
+      if status == "NOT_FOUND" {
+        throw SessionRepositoryError.sessionNotFound
+      }
+
+      guard let sessionId = data["sessionId"] as? String else {
+        throw SessionRepositoryError.invalidResponse
+      }
+
+      return sessionId
+    } catch {
+      SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: "lookupJoinCode", key: "cloudFunction")
+        scope.setExtra(value: joinCode, key: "joinCode")
+      }
+      throw error
     }
-
-    if status == "NOT_FOUND" {
-      throw SessionRepositoryError.sessionNotFound
-    }
-
-    guard let sessionId = data["sessionId"] as? String else {
-      throw SessionRepositoryError.invalidResponse
-    }
-
-    return sessionId
   }
 
   func createSession(

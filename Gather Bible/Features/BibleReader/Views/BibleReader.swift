@@ -10,6 +10,8 @@ struct BibleReader: View {
   @EnvironmentObject private var sessionViewModel: SessionViewModel
   @State private var viewModel: BibleReaderViewModel?
 
+  private let externalDisplayManager = ExternalDisplayManager.shared
+
   var body: some View {
     Group {
       if let viewModel {
@@ -25,6 +27,13 @@ struct BibleReader: View {
       viewModel?.loadVersions()
       viewModel?.syncFromSession()
       viewModel?.subscribeToSessionUpdates()
+
+      if let viewModel {
+        externalDisplayManager.attachReader(viewModel)
+      }
+    }
+    .onDisappear {
+      externalDisplayManager.detachReader()
     }
   }
 }
@@ -32,17 +41,11 @@ struct BibleReader: View {
 // MARK: - Reader Content
 
 private struct ReaderContentView: View {
+  @EnvironmentObject private var sessionViewModel: SessionViewModel
   @Bindable var viewModel: BibleReaderViewModel
   @Environment(\.readerSettings) private var readerSettings
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  @State private var showReaderSettings = false
-
-  @ScaledMetric(relativeTo: .body) private var buttonSizeBase: CGFloat = 56
-  @ScaledMetric(relativeTo: .body) private var buttonSizeRegular: CGFloat = 64
-  @ScaledMetric(relativeTo: .body) private var buttonIconSizeBase: CGFloat = 20
-  @ScaledMetric(relativeTo: .body) private var buttonIconSizeRegular: CGFloat = 24
 
   private var isRegularWidth: Bool {
     horizontalSizeClass == .regular
@@ -56,21 +59,23 @@ private struct ReaderContentView: View {
     isRegularWidth ? 720 : .infinity
   }
 
-  private var buttonSize: CGFloat {
-    isRegularWidth ? buttonSizeRegular : buttonSizeBase
+  private var bookAndChapter: String {
+    guard
+      let book = viewModel.selectedVersionBooks.first(where: {
+        ($0.id ?? "") == viewModel.selectedBook
+      })
+    else {
+      return "Loading..."
+    }
+    return "\(book.title ?? "Unknown") \(viewModel.selectedChapter)"
   }
 
-  private var buttonIconSize: CGFloat {
-    isRegularWidth ? buttonIconSizeRegular : buttonIconSizeBase
+  private var versionAbbreviation: String {
+    viewModel.selectedVersion?.localizedAbbreviation?.uppercased() ?? "..."
   }
 
   var body: some View {
-    VStack(spacing: 0) {
-      NavigationHeader(
-        viewModel: viewModel,
-        onReaderSettingsTap: { showReaderSettings = true }
-      )
-
+    NavigationStack {
       ZStack(alignment: .bottom) {
         SyncableScrollView(viewModel: viewModel) {
           BibleTextView(viewModel.bibleReference, textOptions: readerSettings.textOptions)
@@ -82,38 +87,80 @@ private struct ReaderContentView: View {
             .padding(.bottom, 100)
         }
 
-        navigationButtons
+        chapterNavigationButtons
       }
-    }
-    .sheet(isPresented: $viewModel.showVersionPicker) {
-      VersionPickerSheet(
-        viewModel: viewModel,
-        onDismiss: { viewModel.showVersionPicker = false }
-      )
-    }
-    .sheet(isPresented: $showReaderSettings) {
-      ReaderSettingsSheet()
-        .presentationDetents([.medium, .large])
-    }
-    .onChange(of: viewModel.selectedVersionId) { _, _ in
-      Task { await viewModel.loadBooksForVersion() }
+      .navigationTitle(bookAndChapter)
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button {
+            if !viewModel.availableVersions.isEmpty {
+              viewModel.showVersionPicker = true
+            }
+          } label: {
+            Text(versionAbbreviation)
+              .frame(minWidth: 44)
+          }
+          .modifier(GlassToolbarButtonModifier())
+          .accessibilityLabel("Bible version: \(versionAbbreviation)")
+          .accessibilityHint("Double tap to select a different translation")
+        }
+
+        ToolbarItem(placement: .principal) {
+          Button {
+            viewModel.showBookPicker = true
+          } label: {
+            Text(bookAndChapter)
+              .fontWeight(.semibold)
+          }
+          .modifier(GlassToolbarButtonModifier())
+          .accessibilityLabel("Current chapter: \(bookAndChapter)")
+          .accessibilityHint("Double tap to select a different book or chapter")
+        }
+
+        ToolbarItemGroup(placement: .topBarTrailing) {
+          if sessionViewModel.isInSession {
+            Button {
+              viewModel.showParticipantsSheet = true
+            } label: {
+              Label("\(sessionViewModel.activeParticipantCount)", systemImage: "person.2.fill")
+            }
+            .modifier(GlassToolbarButtonModifier())
+            .accessibilityLabel("\(sessionViewModel.activeParticipantCount) participants")
+          }
+
+          ReaderMenu()
+        }
+      }
+      .sheet(isPresented: $viewModel.showBookPicker) {
+        BookAndChapterPickerSheet(viewModel: viewModel)
+      }
+      .sheet(isPresented: $viewModel.showVersionPicker) {
+        VersionPickerSheet(
+          viewModel: viewModel,
+          onDismiss: { viewModel.showVersionPicker = false }
+        )
+      }
+      .sheet(isPresented: $viewModel.showParticipantsSheet) {
+        ParticipantsSheet(viewModel: sessionViewModel)
+          .presentationDetents([.medium, .large])
+      }
+      .onChange(of: viewModel.selectedVersionId) { _, _ in
+        Task { await viewModel.loadBooksForVersion() }
+      }
     }
   }
 
-  private var navigationButtons: some View {
+  private var chapterNavigationButtons: some View {
     HStack {
       Button(action: { viewModel.previousChapter() }) {
         Image(systemName: "chevron.left")
-          .font(.system(size: buttonIconSize, weight: .bold))
-          .foregroundStyle(Color.primary)
-          .frame(width: buttonSize, height: buttonSize)
-          .background(.ultraThinMaterial)
-          .clipShape(Circle())
-          .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(.secondary)
+          .frame(width: 36, height: 36)
       }
-      .buttonStyle(PlainButtonStyle())
+      .modifier(GlassNavigationButtonModifier())
       .accessibilityLabel("Previous Chapter")
-      .accessibilityHint("Go to the previous chapter")
       .keyboardShortcut(.leftArrow, modifiers: [])
       .sensoryFeedback(
         .impact(weight: .light),
@@ -124,24 +171,46 @@ private struct ReaderContentView: View {
 
       Button(action: { viewModel.nextChapter() }) {
         Image(systemName: "chevron.right")
-          .font(.system(size: buttonIconSize, weight: .bold))
-          .foregroundStyle(Color.primary)
-          .frame(width: buttonSize, height: buttonSize)
-          .background(.ultraThinMaterial)
-          .clipShape(Circle())
-          .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(.secondary)
+          .frame(width: 36, height: 36)
       }
-      .buttonStyle(PlainButtonStyle())
+      .modifier(GlassNavigationButtonModifier())
       .accessibilityLabel("Next Chapter")
-      .accessibilityHint("Go to the next chapter")
       .keyboardShortcut(.rightArrow, modifiers: [])
       .sensoryFeedback(
         .impact(weight: .light),
         trigger: reduceMotion ? nil : "\(viewModel.selectedBook).\(viewModel.selectedChapter)"
       )
     }
-    .padding(.horizontal, isRegularWidth ? 48 : 24)
-    .padding(.bottom, isRegularWidth ? 32 : 24)
+    .padding(.horizontal, isRegularWidth ? 48 : 16)
+    .padding(.bottom, isRegularWidth ? 32 : 16)
+  }
+}
+
+private struct GlassToolbarButtonModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content.buttonStyle(.glass)
+    } else {
+      content.buttonStyle(.bordered)
+    }
+  }
+}
+
+private struct GlassNavigationButtonModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content
+        .buttonStyle(.glass)
+    } else {
+      content
+        .foregroundStyle(Color.primary)
+        .background(.ultraThinMaterial)
+        .clipShape(Circle())
+        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .buttonStyle(.plain)
+    }
   }
 }
 

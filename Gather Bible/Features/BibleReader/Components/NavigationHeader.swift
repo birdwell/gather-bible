@@ -4,7 +4,6 @@ import YouVersionPlatformCore
 struct NavigationHeader: View {
   @EnvironmentObject private var sessionViewModel: SessionViewModel
   @Bindable var viewModel: BibleReaderViewModel
-  var onReaderSettingsTap: () -> Void
 
   var body: some View {
     HStack {
@@ -21,20 +20,7 @@ struct NavigationHeader: View {
 
       Spacer()
 
-      Button {
-        onReaderSettingsTap()
-      } label: {
-        Text("AA")
-          .font(.system(size: 16, weight: .semibold, design: .serif))
-          .foregroundStyle(Color.primary)
-          .frame(width: 44, height: 44)
-          .background(Color(.systemGray5))
-          .clipShape(Circle())
-      }
-      .buttonStyle(PlainButtonStyle())
-      .accessibilityLabel("Reader settings")
-      .accessibilityHint("Change font and text size")
-      .accessibilityAddTraits(.isButton)
+      ReaderMenu()
 
       if sessionViewModel.isInSession {
         Button {

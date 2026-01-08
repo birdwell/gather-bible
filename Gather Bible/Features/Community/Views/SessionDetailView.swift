@@ -8,6 +8,7 @@ import SwiftUI
 struct SessionDetailView: View {
   @ObservedObject var viewModel: SessionViewModel
   @State private var showingJoinSheet = false
+  @State private var showingCreateSheet = false
 
   var body: some View {
     ScrollView {
@@ -20,6 +21,9 @@ struct SessionDetailView: View {
     .navigationTitle("Session")
     .sheet(isPresented: $showingJoinSheet) {
       JoinSessionSheet(viewModel: viewModel, isPresented: $showingJoinSheet)
+    }
+    .sheet(isPresented: $showingCreateSheet) {
+      CreateSessionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)
     }
   }
 
@@ -145,7 +149,7 @@ struct SessionDetailView: View {
 
       VStack(spacing: 16) {
         Button {
-          Task { await viewModel.createSession() }
+          showingCreateSheet = true
         } label: {
           Label("Create Session", systemImage: "plus.circle.fill")
             .frame(maxWidth: .infinity)
