@@ -225,10 +225,15 @@ final class BibleReaderViewModel {
         hasLoadedVersions = true
         isLoadingVersions = false
 
-        if let niv = availableVersions.first(where: { $0.id == 111 }) {
-          selectedVersionId = niv.id
-        } else if let firstVersion = availableVersions.first {
-          selectedVersionId = firstVersion.id
+        // Only apply the NIV/first-version default when the user's current
+        // selection isn't available, so a forced reload (Retry) preserves
+        // the translation they chose.
+        if !availableVersions.contains(where: { $0.id == selectedVersionId }) {
+          if let niv = availableVersions.first(where: { $0.id == 111 }) {
+            selectedVersionId = niv.id
+          } else if let firstVersion = availableVersions.first {
+            selectedVersionId = firstVersion.id
+          }
         }
 
         await loadBooksForVersion()
@@ -241,9 +246,18 @@ final class BibleReaderViewModel {
     }
   }
 
-  /// Re-runs the full load, forcing a network fetch. Used by the reader's Retry button.
+  /// Re-runs the failed load. If versions are already loaded, only the current
+  /// version's books are refetched so the user's selected translation is kept;
+  /// otherwise the full version list is loaded. Used by the reader's Retry button.
   func retryLoad() {
-    loadVersions(force: true)
+    if hasLoadedVersions {
+      Task {
+        loadErrorMessage = nil
+        await loadBooksForVersion()
+      }
+    } else {
+      loadVersions(force: true)
+    }
   }
 
   func loadBooksForVersion() async {

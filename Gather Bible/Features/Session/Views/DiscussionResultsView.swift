@@ -64,7 +64,11 @@ struct DiscussionResultsView: View {
         Button("End Discussion") {
           Task {
             await viewModel.completeDiscussion()
-            dismiss()
+            // Stay on the results sheet if ending failed (the error alert
+            // explains why); the discussion may still be active.
+            if viewModel.errorMessage == nil {
+              dismiss()
+            }
           }
         }
         Button("Cancel", role: .cancel) {}
