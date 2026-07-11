@@ -26,7 +26,10 @@ struct ParticipantsDetailView: View {
   private var participantsList: some View {
     List {
       ForEach(viewModel.participants) { participant in
-        ParticipantRow(participant: participant)
+        ParticipantRow(
+          participant: participant,
+          isCurrentUser: participant.id == viewModel.userId
+        )
       }
     }
     .listStyle(.insetGrouped)

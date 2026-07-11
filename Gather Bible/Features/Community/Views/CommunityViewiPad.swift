@@ -28,6 +28,8 @@ struct CommunityViewiPad: View {
   @State private var selectedSection: CommunitySection? = .session
   @State private var columnVisibility: NavigationSplitViewVisibility = .all
   @State private var showingCreateSheet = false
+  @State private var showingJoinSheet = false
+  @State private var pendingCodeForSheet: String?
 
   var body: some View {
     NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -37,6 +39,48 @@ struct CommunityViewiPad: View {
       detailView
     }
     .navigationSplitViewStyle(.balanced)
+    .sheet(isPresented: $showingCreateSheet) {
+      CreateSessionSheet(viewModel: sessionViewModel, isPresented: $showingCreateSheet)
+    }
+    .sheet(isPresented: $showingJoinSheet) {
+      JoinSessionSheet(
+        viewModel: sessionViewModel,
+        isPresented: $showingJoinSheet,
+        initialCode: pendingCodeForSheet
+      )
+    }
+    .alert(
+      "Something Went Wrong",
+      isPresented: Binding(
+        get: { sessionViewModel.errorMessage != nil },
+        set: { presenting in
+          if !presenting { sessionViewModel.errorMessage = nil }
+        }
+      ),
+      actions: {
+        Button("OK", role: .cancel) { sessionViewModel.errorMessage = nil }
+      },
+      message: {
+        if let error = sessionViewModel.errorMessage {
+          Text(error)
+        }
+      }
+    )
+    .onChange(of: sessionViewModel.pendingJoinCode) { _, newCode in
+      handlePendingJoinCode(newCode)
+    }
+    .onAppear {
+      handlePendingJoinCode(sessionViewModel.pendingJoinCode)
+    }
+  }
+
+  /// Consumes a deep-link join code by opening the Join sheet, mirroring
+  /// `SessionManagementView`'s logic for the iPhone (compact) path.
+  private func handlePendingJoinCode(_ code: String?) {
+    guard let code, !sessionViewModel.isInSession else { return }
+    pendingCodeForSheet = code
+    showingJoinSheet = true
+    sessionViewModel.pendingJoinCode = nil
   }
 
   // MARK: - Sidebar
@@ -68,24 +112,22 @@ struct CommunityViewiPad: View {
       HStack {
         Text(section.rawValue)
         Spacer()
-        if section == .participants && sessionViewModel.isInSession {
-          Text("\(sessionViewModel.activeParticipantCount)")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Color(.tertiarySystemBackground))
-            .clipShape(Capsule())
-        }
         if section == .discussions && sessionViewModel.activeDiscussion != nil {
           Circle()
-            .fill(.blue)
+            .fill(Color.accentColor)
             .frame(width: 8, height: 8)
+            .accessibilityHidden(true)
         }
       }
     } icon: {
       Image(systemName: section.icon)
     }
+    // List-native badge reads correctly on the grouped sidebar background
+    // (unlike a custom capsule) and is hidden automatically when the count is 0.
+    .badge(
+      section == .participants && sessionViewModel.isInSession
+        ? sessionViewModel.activeParticipantCount : 0
+    )
   }
 
   private var sessionStatusHeader: some View {
@@ -109,17 +151,29 @@ struct CommunityViewiPad: View {
       Button {
         showingCreateSheet = true
       } label: {
-        Label("Create Session", systemImage: "plus.circle.fill")
-          .frame(maxWidth: .infinity)
+        if sessionViewModel.isLoading {
+          ProgressView()
+            .frame(maxWidth: .infinity)
+        } else {
+          Label("Create Session", systemImage: "plus.circle.fill")
+            .frame(maxWidth: .infinity)
+        }
       }
       .buttonStyle(.borderedProminent)
       .controlSize(.large)
       .disabled(sessionViewModel.isLoading)
+
+      Button {
+        showingJoinSheet = true
+      } label: {
+        Label("Join Session", systemImage: "person.badge.plus")
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.bordered)
+      .controlSize(.large)
+      .disabled(sessionViewModel.isLoading)
     }
     .padding(.vertical, 8)
-    .sheet(isPresented: $showingCreateSheet) {
-      CreateSessionSheet(viewModel: sessionViewModel, isPresented: $showingCreateSheet)
-    }
   }
 
   // MARK: - Detail View

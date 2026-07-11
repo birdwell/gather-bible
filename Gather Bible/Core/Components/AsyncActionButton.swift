@@ -12,21 +12,35 @@ struct AsyncActionButton: View {
   let title: String
   let isLoading: Bool
   var isDisabled: Bool = false
-  var style: ButtonStyle = .prominent
+  var style: Variant = .prominent
   let action: () async -> Void
 
-  enum ButtonStyle {
+  /// The visual/semantic style of the button.
+  ///
+  /// Named `Variant` so it does not shadow SwiftUI's `ButtonStyle` protocol.
+  /// `ButtonStyle` remains available as a type alias for source compatibility.
+  enum Variant {
     case prominent, bordered, destructive
   }
 
+  typealias ButtonStyle = Variant
+
+  /// Tracks the in-flight action so we can guard against double-taps in the
+  /// window before the caller's `isLoading` flag flips, and cancel on disappear.
+  @State private var task: Task<Void, Never>?
+
   var body: some View {
-    Button {
-      Task { await action() }
+    Button(role: style == .destructive ? .destructive : nil) {
+      // Guard against re-entry: ignore taps while an action is already running.
+      guard task == nil else { return }
+      task = Task {
+        await action()
+        task = nil
+      }
     } label: {
       Group {
         if isLoading {
           ProgressView()
-            .tint(style == .prominent ? .white : .accentColor)
             .accessibilityHidden(true)
         } else {
           Text(title)
@@ -36,15 +50,33 @@ struct AsyncActionButton: View {
       .frame(maxWidth: .infinity)
     }
     .accessibilityLabel(title)
-    .accessibilityValue(isLoading ? "Loading" : "")
+    .modifier(LoadingAccessibilityValue(isLoading: isLoading))
     .modifier(ButtonStyleModifier(style: style))
     .controlSize(.large)
     .disabled(isDisabled || isLoading)
+    .onDisappear {
+      task?.cancel()
+      task = nil
+    }
+  }
+}
+
+/// Applies an accessibility value of "Loading" only while loading, avoiding the
+/// meaningless empty-string value that VoiceOver would otherwise announce.
+private struct LoadingAccessibilityValue: ViewModifier {
+  let isLoading: Bool
+
+  func body(content: Content) -> some View {
+    if isLoading {
+      content.accessibilityValue(Text("Loading"))
+    } else {
+      content
+    }
   }
 }
 
 private struct ButtonStyleModifier: ViewModifier {
-  let style: AsyncActionButton.ButtonStyle
+  let style: AsyncActionButton.Variant
 
   func body(content: Content) -> some View {
     switch style {
@@ -53,7 +85,9 @@ private struct ButtonStyleModifier: ViewModifier {
     case .bordered:
       content.buttonStyle(.bordered)
     case .destructive:
-      content.buttonStyle(.bordered).tint(.red)
+      // `Button(role: .destructive)` supplies the semantics and system red;
+      // `.bordered` keeps the visual weight consistent with other styles.
+      content.buttonStyle(.bordered)
     }
   }
 }

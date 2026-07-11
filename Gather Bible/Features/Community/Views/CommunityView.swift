@@ -4,18 +4,13 @@ import SwiftUI
 
 struct CommunityView: View {
   @EnvironmentObject var sessionViewModel: SessionViewModel
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-  private var isRegularWidth: Bool {
-    horizontalSizeClass == .regular
-  }
 
   var body: some View {
     ScrollView {
-      VStack(spacing: isRegularWidth ? 24 : 16) {
+      VStack(spacing: 16) {
         SessionManagementView(viewModel: sessionViewModel)
       }
-      .padding(isRegularWidth ? 32 : 16)
+      .padding(16)
       .frame(maxWidth: .infinity)
     }
     .navigationTitle("Community")

@@ -13,25 +13,66 @@ struct CopyableCodeButton: View {
   var iconFont: Font = .title2
 
   @State private var copied = false
+  @State private var resetTask: Task<Void, Never>?
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     Button {
       UIPasteboard.general.string = code
       copied = true
-      DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+
+      // Announce the result for VoiceOver users; the label stays stable so the
+      // control keeps its identity instead of morphing into a different button.
+      AccessibilityNotification.Announcement("Copied").post()
+
+      // Cancel any in-flight reset so a re-tap restarts the 2s window.
+      resetTask?.cancel()
+      resetTask = Task {
+        try? await Task.sleep(for: .seconds(2))
+        guard !Task.isCancelled else { return }
         copied = false
       }
     } label: {
       Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
         .font(iconFont)
         .foregroundStyle(copied ? .green : .accentColor)
-        .contentTransition(.symbolEffect(.replace))
+        .modifier(CopyIconTransition(enabled: !reduceMotion))
         .frame(minWidth: 44, minHeight: 44)
     }
     .buttonStyle(.borderless)
-    .accessibilityLabel(copied ? "Code copied" : "Copy code")
-    .accessibilityHint(copied ? "Code is already copied to clipboard" : "Double tap to copy to clipboard")
+    .accessibilityLabel("Copy code")
+    .modifier(CopiedAccessibilityValue(copied: copied))
+    .accessibilityHint("Copies the code to the clipboard")
+    .onDisappear {
+      resetTask?.cancel()
+      resetTask = nil
+    }
+  }
+}
+
+/// Applies the symbol-replace transition only when Reduce Motion is off.
+private struct CopyIconTransition: ViewModifier {
+  let enabled: Bool
+
+  func body(content: Content) -> some View {
+    if enabled {
+      content.contentTransition(.symbolEffect(.replace))
+    } else {
+      content
+    }
+  }
+}
+
+/// Exposes the copied state as an accessibility value without mutating the label.
+private struct CopiedAccessibilityValue: ViewModifier {
+  let copied: Bool
+
+  func body(content: Content) -> some View {
+    if copied {
+      content.accessibilityValue(Text("Copied"))
+    } else {
+      content
+    }
   }
 }
 
