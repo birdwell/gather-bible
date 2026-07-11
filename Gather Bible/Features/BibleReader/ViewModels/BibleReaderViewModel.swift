@@ -258,6 +258,9 @@ final class BibleReaderViewModel {
           selectedBook = books.first?.id ?? "GEN"
           selectedChapter = 1
         }
+      } else {
+        loadErrorMessage =
+          "We couldn't load this translation. Check your connection and try again."
       }
     } catch {
       loadErrorMessage =

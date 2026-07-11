@@ -30,6 +30,7 @@ struct CommunityViewiPad: View {
   @State private var showingCreateSheet = false
   @State private var showingJoinSheet = false
   @State private var pendingCodeForSheet: String?
+  @State private var conflictingJoinCode: String?
 
   var body: some View {
     NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -69,6 +70,35 @@ struct CommunityViewiPad: View {
         }
       }
     )
+    // Deep-link into a join code while already in a session: offer to switch.
+    .alert(
+      "Join a Different Session?",
+      isPresented: Binding(
+        get: { conflictingJoinCode != nil },
+        set: { presenting in
+          if !presenting { conflictingJoinCode = nil }
+        }
+      )
+    ) {
+      Button("Leave & Join") {
+        if let code = conflictingJoinCode {
+          conflictingJoinCode = nil
+          Task {
+            await sessionViewModel.leaveSession()
+            // Leaving can fail (error surfaced via the alert); only offer the
+            // join sheet once we're actually out of the current session.
+            guard !sessionViewModel.isInSession else { return }
+            pendingCodeForSheet = code
+            showingJoinSheet = true
+          }
+        }
+      }
+      Button("Cancel", role: .cancel) { conflictingJoinCode = nil }
+    } message: {
+      if let code = conflictingJoinCode {
+        Text("You're already in a session. Leave it to join session \(code)?")
+      }
+    }
     .onChange(of: sessionViewModel.pendingJoinCode) { _, newCode in
       handlePendingJoinCode(newCode)
     }
@@ -77,13 +107,20 @@ struct CommunityViewiPad: View {
     }
   }
 
-  /// Consumes a deep-link join code by opening the Join sheet, mirroring
-  /// `SessionManagementView`'s logic for the iPhone (compact) path.
+  /// Consumes a deep-link join code, mirroring `SessionManagementView`'s logic
+  /// for the iPhone (compact) path: open the Join sheet, or offer to switch
+  /// sessions when one is already active.
   private func handlePendingJoinCode(_ code: String?) {
-    guard let code, !sessionViewModel.isInSession else { return }
-    pendingCodeForSheet = code
-    showingJoinSheet = true
+    guard let code else { return }
+    // Consume the pending code regardless of outcome.
     sessionViewModel.pendingJoinCode = nil
+
+    if sessionViewModel.isInSession {
+      conflictingJoinCode = code
+    } else {
+      pendingCodeForSheet = code
+      showingJoinSheet = true
+    }
   }
 
   // MARK: - Sidebar

@@ -65,6 +65,9 @@ struct SessionManagementView: View {
           conflictingJoinCode = nil
           Task {
             await viewModel.leaveSession()
+            // Leaving can fail (error surfaced via the alert); only offer the
+            // join sheet once we're actually out of the current session.
+            guard !viewModel.isInSession else { return }
             pendingCodeForSheet = code
             showingJoinSheet = true
           }

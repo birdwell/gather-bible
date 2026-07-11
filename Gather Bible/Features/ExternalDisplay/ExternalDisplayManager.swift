@@ -50,9 +50,11 @@ final class ExternalDisplayManager {
   }
 
   /// Identifies external displays by scene role rather than the deprecated
-  /// `UIScreen.main` comparison.
+  /// `UIScreen.main` comparison. Any window scene that isn't the main app
+  /// window counts as external, so displays connected under other external
+  /// roles (e.g. the pre-iOS 16 interactive role) are still detected.
   private func isExternalScene(_ scene: UIWindowScene) -> Bool {
-    scene.session.role == .windowExternalDisplayNonInteractive
+    scene.session.role != .windowApplication
   }
 
   private func handleSceneConnect(_ scene: UIWindowScene) {

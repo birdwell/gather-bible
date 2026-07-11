@@ -165,7 +165,10 @@ private struct ReaderContentView: View {
 
   @ViewBuilder
   private var readerBody: some View {
-    if let errorMessage = viewModel.loadErrorMessage, !viewModel.booksLoaded {
+    // Error takes priority even when a previous translation's books are still
+    // loaded: after a failed version switch the reader state is inconsistent,
+    // so show the retry UI instead of silently keeping the old translation.
+    if let errorMessage = viewModel.loadErrorMessage {
       errorView(message: errorMessage)
     } else if !viewModel.booksLoaded {
       ProgressView("Loading…")

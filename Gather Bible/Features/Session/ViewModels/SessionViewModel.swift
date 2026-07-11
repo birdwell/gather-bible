@@ -276,6 +276,10 @@ class SessionViewModel: ObservableObject {
           scope.setTag(value: "leaveSession", key: "operation")
         }
         handleError(error)
+        // Keep local session state: Firebase may still list this participant,
+        // so the UI must keep reflecting the live session until leave succeeds.
+        isLoading = false
+        return
       }
     }
 
