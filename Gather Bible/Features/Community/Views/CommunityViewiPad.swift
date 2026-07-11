@@ -43,7 +43,9 @@ struct CommunityViewiPad: View {
     .sheet(isPresented: $showingCreateSheet) {
       CreateSessionSheet(viewModel: sessionViewModel, isPresented: $showingCreateSheet)
     }
-    .sheet(isPresented: $showingJoinSheet) {
+    // Clear the deep-link code once the sheet closes so a later manual Join
+    // doesn't reuse a stale session code.
+    .sheet(isPresented: $showingJoinSheet, onDismiss: { pendingCodeForSheet = nil }) {
       JoinSessionSheet(
         viewModel: sessionViewModel,
         isPresented: $showingJoinSheet,

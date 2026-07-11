@@ -29,7 +29,9 @@ struct SessionManagementView: View {
     .sensoryFeedback(trigger: viewModel.isInSession) { _, isIn in
       isIn ? .success : nil
     }
-    .sheet(isPresented: $showingJoinSheet) {
+    // Clear the deep-link code once the sheet closes so a later manual Join
+    // doesn't reuse a stale session code.
+    .sheet(isPresented: $showingJoinSheet, onDismiss: { pendingCodeForSheet = nil }) {
       JoinSessionSheet(
         viewModel: viewModel,
         isPresented: $showingJoinSheet,
