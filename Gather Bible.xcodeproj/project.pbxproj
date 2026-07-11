@@ -321,7 +321,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/opt/homebrew/bin/periphery scan --project \"Gather Bible.xcodeproj\" --schemes \"Gather Bible\" --format xcode -- -destination \"generic/platform=iOS Simulator\"\n";
+			shellScript = "if [ -x /opt/homebrew/bin/periphery ]; then\n  /opt/homebrew/bin/periphery scan --project \"Gather Bible.xcodeproj\" --schemes \"Gather Bible\" --format xcode -- -destination \"generic/platform=iOS Simulator\"\nelse\n  echo \"warning: periphery not installed, skipping scan\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
