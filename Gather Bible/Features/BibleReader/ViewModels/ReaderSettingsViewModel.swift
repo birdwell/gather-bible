@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import YouVersionPlatformUI
 
 @Observable
@@ -45,12 +46,31 @@ final class ReaderSettingsViewModel {
     currentSizeIndex > 0
   }
 
+  /// Text options using the raw chosen size, without Dynamic Type scaling.
+  /// Prefer `textOptions(for:)` for on-screen reading so accessibility text
+  /// sizes are respected.
   var textOptions: BibleTextOptions {
+    makeTextOptions(size: fontSize)
+  }
+
+  /// Text options whose effective size scales with the system Dynamic Type
+  /// setting. The user's chosen step is treated as the base `.body` size and
+  /// scaled via `UIFontMetrics`, so accessibility sizes are no longer capped
+  /// at the 32pt maximum step.
+  func textOptions(for dynamicTypeSize: DynamicTypeSize) -> BibleTextOptions {
+    let traits = UITraitCollection(
+      preferredContentSizeCategory: dynamicTypeSize.uiContentSizeCategory)
+    let scaledSize = UIFontMetrics(forTextStyle: .body)
+      .scaledValue(for: fontSize, compatibleWith: traits)
+    return makeTextOptions(size: scaledSize)
+  }
+
+  private func makeTextOptions(size: CGFloat) -> BibleTextOptions {
     BibleTextOptions(
       fontFamily: fontFamily,
-      fontSize: fontSize,
-      lineSpacing: fontSize * 0.6,
-      paragraphSpacing: fontSize * 0.5
+      fontSize: size,
+      lineSpacing: size * 0.6,
+      paragraphSpacing: size * 0.5
     )
   }
 
@@ -87,6 +107,30 @@ struct ReaderFont: Identifiable, Equatable {
     case system
     case serif
     case sansSerif
+  }
+}
+
+// MARK: - Dynamic Type Mapping
+
+extension DynamicTypeSize {
+  /// Maps a SwiftUI `DynamicTypeSize` to the equivalent `UIContentSizeCategory`
+  /// so `UIFontMetrics` can scale a value against it.
+  var uiContentSizeCategory: UIContentSizeCategory {
+    switch self {
+    case .xSmall: return .extraSmall
+    case .small: return .small
+    case .medium: return .medium
+    case .large: return .large
+    case .xLarge: return .extraLarge
+    case .xxLarge: return .extraExtraLarge
+    case .xxxLarge: return .extraExtraExtraLarge
+    case .accessibility1: return .accessibilityMedium
+    case .accessibility2: return .accessibilityLarge
+    case .accessibility3: return .accessibilityExtraLarge
+    case .accessibility4: return .accessibilityExtraExtraLarge
+    case .accessibility5: return .accessibilityExtraExtraExtraLarge
+    @unknown default: return .large
+    }
   }
 }
 

@@ -120,6 +120,7 @@ final class FirebaseSessionRepository: SessionRepository {
     sessionId: String,
     userId: String,
     joinCode: String,
+    hostDisplayName: String,
     initialBook: String,
     initialChapter: Int
   ) async throws {
@@ -142,7 +143,7 @@ final class FirebaseSessionRepository: SessionRepository {
           "state": initialState,
           "participants": [
             userId: [
-              "displayName": "Host",
+              "displayName": hostDisplayName,
               "isHost": true,
               "active": true,
               "lastSeen": ServerValue.timestamp(),
@@ -171,25 +172,13 @@ final class FirebaseSessionRepository: SessionRepository {
       .setValue(participantData)
   }
 
-  func leaveSession(sessionId: String, userId: String, isHost: Bool) async {
+  func leaveSession(sessionId: String, userId: String, isHost: Bool) async throws {
     if !isHost {
-      do {
-        try await db.child("sessions").child(sessionId).child("participants").child(userId)
-          .removeValue()
-      } catch {
-        #if DEBUG
-          print("[FirebaseSessionRepository] Failed to remove participant: \(error)")
-        #endif
-      }
+      try await db.child("sessions").child(sessionId).child("participants").child(userId)
+        .removeValue()
     } else {
-      do {
-        try await db.child("sessions").child(sessionId).child("state").child("active")
-          .setValue(false)
-      } catch {
-        #if DEBUG
-          print("[FirebaseSessionRepository] Failed to mark session inactive: \(error)")
-        #endif
-      }
+      try await db.child("sessions").child(sessionId).child("state").child("active")
+        .setValue(false)
     }
   }
 

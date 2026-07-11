@@ -16,10 +16,10 @@ struct DraftDiscussionsView: View {
     NavigationStack {
       Group {
         if viewModel.draftDiscussions.isEmpty {
-          EmptyStateView(
-            icon: "doc.text",
-            title: "No drafts",
-            subtitle: "Create a discussion and save it as a draft to send later"
+          ContentUnavailableView(
+            "No Drafts",
+            systemImage: "doc.text",
+            description: Text("Create a discussion and save it as a draft to send later")
           )
         } else {
           List {
@@ -46,6 +46,7 @@ struct DraftDiscussionsView: View {
       }
     }
     .presentationDetents([.medium, .large])
+    .presentationDragIndicator(.visible)
   }
 }
 
@@ -68,7 +69,7 @@ private struct DraftRow: View {
 
         Button("Send", action: onSend)
           .buttonStyle(.borderedProminent)
-          .controlSize(.small)
+          .controlSize(.regular)
       }
     }
     .padding(.vertical, 4)

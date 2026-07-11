@@ -13,22 +13,32 @@ struct BookAndChapterPickerSheet: View {
     horizontalSizeClass == .regular
   }
 
-  private var columnCount: Int {
-    isRegularWidth ? 10 : 6
-  }
-
   private var cellSize: CGFloat {
     isRegularWidth ? 52 : 44
   }
 
   var body: some View {
     NavigationStack {
-      List {
-        ForEach(viewModel.selectedVersionBooks, id: \.id) { book in
-          bookRow(book)
+      ScrollViewReader { proxy in
+        List {
+          ForEach(viewModel.selectedVersionBooks, id: \.id) { book in
+            bookRow(book)
+              .id(book.id ?? "")
+          }
+        }
+        .listStyle(.plain)
+        .onAppear {
+          // Pre-expand and scroll to the currently selected book so the user
+          // doesn't start at Genesis every time.
+          let selected = viewModel.selectedBook
+          expandedBookId = selected
+          DispatchQueue.main.async {
+            withAnimation(.none) {
+              proxy.scrollTo(selected, anchor: .top)
+            }
+          }
         }
       }
-      .listStyle(.plain)
       .navigationTitle("Select Passage")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -73,6 +83,9 @@ struct BookAndChapterPickerSheet: View {
         .frame(minHeight: 44)
       }
       .buttonStyle(PlainButtonStyle())
+      .accessibilityLabel(book.title ?? "Unknown")
+      .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+      .accessibilityHint(isExpanded ? "Hides chapters" : "Shows chapters")
 
       if isExpanded, let chapters = book.chapters {
         chapterGrid(bookId: bookId, chapterCount: chapters.count)
@@ -84,10 +97,13 @@ struct BookAndChapterPickerSheet: View {
   }
 
   private func chapterGrid(bookId: String, chapterCount: Int) -> some View {
-    let columns = Array(repeating: GridItem(.flexible(), spacing: isRegularWidth ? 12 : 8), count: columnCount)
+    let columns = [
+      GridItem(.adaptive(minimum: cellSize), spacing: isRegularWidth ? 12 : 8)
+    ]
 
     return LazyVGrid(columns: columns, spacing: isRegularWidth ? 12 : 8) {
       ForEach(1...chapterCount, id: \.self) { chapter in
+        let isCurrent = viewModel.selectedBook == bookId && viewModel.selectedChapter == chapter
         Button {
           viewModel.selectedBook = bookId
           viewModel.selectedChapter = chapter
@@ -95,21 +111,17 @@ struct BookAndChapterPickerSheet: View {
           dismiss()
         } label: {
           Text("\(chapter)")
-            .font(.system(size: isRegularWidth ? 16 : 14, weight: .medium))
-            .foregroundStyle(
-              viewModel.selectedBook == bookId && viewModel.selectedChapter == chapter
-                ? Color.white
-                : Color.primary
-            )
+            .font(.body.weight(.medium))
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
+            .foregroundStyle(isCurrent ? Color.white : Color.primary)
             .frame(width: cellSize, height: cellSize)
-            .background(
-              viewModel.selectedBook == bookId && viewModel.selectedChapter == chapter
-                ? Color.accentColor
-                : Color(.systemGray5)
-            )
+            .background(isCurrent ? Color.accentColor : Color(.systemGray5))
             .clipShape(RoundedRectangle(cornerRadius: isRegularWidth ? 10 : 8))
         }
         .buttonStyle(PlainButtonStyle())
+        .accessibilityLabel("Chapter \(chapter)")
+        .accessibilityAddTraits(isCurrent ? .isSelected : [])
       }
     }
   }

@@ -14,6 +14,8 @@ struct DiscussionResultsView: View {
 
   let discussion: Discussion
 
+  @State private var showingEndConfirmation = false
+
   var body: some View {
     NavigationStack {
       ScrollView {
@@ -21,10 +23,10 @@ struct DiscussionResultsView: View {
           questionHeader
 
           if viewModel.discussionResponses.isEmpty {
-            EmptyStateView(
-              icon: "person.2.slash",
-              title: "No responses yet",
-              subtitle: "Waiting for guests to submit their thoughts..."
+            ContentUnavailableView(
+              "No Responses Yet",
+              systemImage: "person.2.slash",
+              description: Text("Waiting for guests to submit their thoughts...")
             )
           } else {
             LazyVStack(spacing: 16) {
@@ -45,10 +47,7 @@ struct DiscussionResultsView: View {
         if discussion.status == .active {
           ToolbarItem(placement: .bottomBar) {
             Button {
-              Task {
-                await viewModel.completeDiscussion()
-                dismiss()
-              }
+              showingEndConfirmation = true
             } label: {
               Label("End Discussion", systemImage: "checkmark.circle.fill")
             }
@@ -56,6 +55,21 @@ struct DiscussionResultsView: View {
             .disabled(viewModel.isLoading)
           }
         }
+      }
+      .confirmationDialog(
+        "End This Discussion?",
+        isPresented: $showingEndConfirmation,
+        titleVisibility: .visible
+      ) {
+        Button("End Discussion") {
+          Task {
+            await viewModel.completeDiscussion()
+            dismiss()
+          }
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text("Guests will no longer be able to respond to this question.")
       }
     }
   }

@@ -52,7 +52,10 @@ struct CommunityViewiPad: View {
     .alert(
       "Something Went Wrong",
       isPresented: Binding(
-        get: { sessionViewModel.errorMessage != nil },
+        get: {
+          sessionViewModel.errorMessage != nil
+            && !sessionViewModel.isInlineErrorSheetPresented
+        },
         set: { presenting in
           if !presenting { sessionViewModel.errorMessage = nil }
         }

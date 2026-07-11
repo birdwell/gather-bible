@@ -13,53 +13,76 @@ struct SessionQRCodeView: View {
   let sessionCode: String
   @Environment(\.dismiss) private var dismiss
 
+  private var joinURLString: String {
+    "gatherbible://join?code=\(sessionCode)"
+  }
+
+  private var joinURL: URL? {
+    URL(string: joinURLString)
+  }
+
   private var qrCodeImage: UIImage? {
-    generateQRCode(from: "gatherbible://join?code=\(sessionCode)")
+    generateQRCode(from: joinURLString)
+  }
+
+  private var spokenCode: String {
+    sessionCode.map { String($0) }.joined(separator: " ")
   }
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 24) {
-        Text("Scan to Join")
-          .font(.title2)
-          .fontWeight(.semibold)
+      ScrollView {
+        VStack(spacing: 24) {
+          if let qrImage = qrCodeImage {
+            Image(uiImage: qrImage)
+              .interpolation(.none)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 250, height: 250)
+              .padding(20)
+              .background(Color.white)
+              .clipShape(RoundedRectangle(cornerRadius: 16))
+              .shadow(radius: 4)
+              .accessibilityLabel("QR code for session \(sessionCode)")
+          } else {
+            ProgressView()
+              .frame(width: 250, height: 250)
+          }
 
-        if let qrImage = qrCodeImage {
-          Image(uiImage: qrImage)
-            .interpolation(.none)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 250, height: 250)
-            .padding(20)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(radius: 4)
-            .accessibilityLabel("QR code for session \(sessionCode)")
-        } else {
-          ProgressView()
-            .frame(width: 250, height: 250)
-        }
+          VStack(spacing: 8) {
+            Text("Session Code")
+              .font(.caption)
+              .foregroundStyle(.secondary)
 
-        VStack(spacing: 8) {
-          Text("Session Code")
-            .font(.caption)
+            Text(sessionCode)
+              .font(.system(.title, design: .monospaced))
+              .fontWeight(.bold)
+              .kerning(4)
+              .accessibilityLabel(spokenCode)
+          }
+
+          if let joinURL {
+            ShareLink(
+              item: joinURL,
+              subject: Text("Join my Bible reading session"),
+              message: Text("Tap to join my reading session, or enter code \(sessionCode).")
+            ) {
+              Label("Share Invite", systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.bordered)
+          }
+
+          Text("Have others scan this QR code to join your session")
+            .font(.subheadline)
             .foregroundStyle(.secondary)
-
-          Text(sessionCode)
-            .font(.system(.title, design: .monospaced))
-            .fontWeight(.bold)
-            .kerning(4)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
         }
-
-        Text("Have others scan this QR code to join your session")
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-          .padding(.horizontal)
+        .padding()
+        .frame(maxWidth: .infinity)
       }
-      .padding()
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(Color(.systemBackground))
+      .navigationTitle("Scan to Join")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
@@ -67,7 +90,7 @@ struct SessionQRCodeView: View {
         }
       }
     }
-    .presentationDetents([.medium])
+    .presentationDetents([.medium, .large])
     .presentationDragIndicator(.visible)
   }
 

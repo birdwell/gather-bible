@@ -19,31 +19,38 @@ struct VersionPickerSheet: View {
   }
 
   var body: some View {
-    NavigationView {
+    NavigationStack {
       Group {
-        if filteredVersions.isEmpty {
+        if viewModel.availableVersions.isEmpty && viewModel.isLoadingVersions {
+          ProgressView("Loading versions…")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if filteredVersions.isEmpty {
           ContentUnavailableView.search(text: searchText)
         } else {
           List(filteredVersions, id: \.id) { version in
-            HStack {
-              VStack(alignment: .leading, spacing: 4) {
-                Text((version.localizedAbbreviation ?? "").uppercased())
-                  .font(.headline)
-                Text(version.title ?? "Unknown")
-                  .font(.caption)
-                  .foregroundColor(.secondary)
-              }
-              Spacer()
-              if version.id == viewModel.selectedVersionId {
-                Image(systemName: "checkmark")
-                  .foregroundColor(.accentColor)
-              }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
+            let isSelected = version.id == viewModel.selectedVersionId
+            Button {
               viewModel.selectedVersionId = version.id
               onDismiss()
+            } label: {
+              HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                  Text((version.localizedAbbreviation ?? "").uppercased())
+                    .font(.headline)
+                  Text(version.title ?? "Unknown")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                }
+                Spacer()
+                if isSelected {
+                  Image(systemName: "checkmark")
+                    .foregroundColor(.accentColor)
+                }
+              }
+              .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
           }
         }
       }
@@ -51,7 +58,7 @@ struct VersionPickerSheet: View {
       .navigationTitle("Select Bible Version")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
+        ToolbarItem(placement: .confirmationAction) {
           Button("Done") { onDismiss() }
         }
       }

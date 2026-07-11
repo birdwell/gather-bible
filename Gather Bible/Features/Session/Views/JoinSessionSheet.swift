@@ -14,12 +14,25 @@ struct JoinSessionSheet: View {
 
   @State private var joinCodeInput = ""
   @State private var displayNameInput = ""
-  @FocusState private var isNameFieldFocused: Bool
+  @FocusState private var focusedField: Field?
+
+  private enum Field: Hashable {
+    case name
+    case code
+  }
 
   init(viewModel: SessionViewModel, isPresented: Binding<Bool>, initialCode: String? = nil) {
     self._viewModel = ObservedObject(wrappedValue: viewModel)
     self._isPresented = isPresented
     self._joinCodeInput = State(initialValue: initialCode ?? "")
+  }
+
+  private var trimmedName: String {
+    displayNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private var canJoin: Bool {
+    joinCodeInput.count == 6 && !trimmedName.isEmpty
   }
 
   var body: some View {
@@ -28,17 +41,25 @@ struct JoinSessionSheet: View {
         VStack(spacing: 24) {
           FormField(label: "Your Name", helper: "This is how others will see you") {
             TextField("Enter your name", text: $displayNameInput)
-              .focused($isNameFieldFocused)
+              .focused($focusedField, equals: .name)
+              .textContentType(.name)
+              .textInputAutocapitalization(.words)
+              .submitLabel(.next)
+              .onSubmit { focusedField = .code }
               .padding()
               .background(Color(.secondarySystemBackground))
               .clipShape(RoundedRectangle(cornerRadius: 12))
           }
 
           NearbySessionsView(viewModel: viewModel) { session in
+            guard !trimmedName.isEmpty else {
+              focusedField = .name
+              return
+            }
             Task {
               await viewModel.joinSession(
                 joinCode: session.joinCode,
-                displayName: displayNameInput.isEmpty ? "Guest" : displayNameInput
+                displayName: trimmedName
               )
               if viewModel.isInSession {
                 dismiss()
@@ -64,18 +85,8 @@ struct JoinSessionSheet: View {
           if viewModel.isLoading {
             ProgressView()
           } else {
-            Button("Join") {
-              Task {
-                await viewModel.joinSession(
-                  joinCode: joinCodeInput,
-                  displayName: displayNameInput.isEmpty ? "Guest" : displayNameInput
-                )
-                if viewModel.isInSession {
-                  dismiss()
-                }
-              }
-            }
-            .disabled(joinCodeInput.count != 6)
+            Button("Join") { attemptJoin() }
+              .disabled(!canJoin)
           }
         }
       }
@@ -83,7 +94,29 @@ struct JoinSessionSheet: View {
     .presentationDetents([.medium, .large])
     .presentationDragIndicator(.visible)
     .onAppear {
-      isNameFieldFocused = true
+      viewModel.errorMessage = nil
+      viewModel.isInlineErrorSheetPresented = true
+      focusedField = .name
+    }
+    .onDisappear {
+      viewModel.isInlineErrorSheetPresented = false
+      viewModel.errorMessage = nil
+    }
+  }
+
+  private func attemptJoin() {
+    guard canJoin else {
+      if trimmedName.isEmpty { focusedField = .name }
+      return
+    }
+    Task {
+      await viewModel.joinSession(
+        joinCode: joinCodeInput,
+        displayName: trimmedName
+      )
+      if viewModel.isInSession {
+        dismiss()
+      }
     }
   }
 
@@ -93,9 +126,12 @@ struct JoinSessionSheet: View {
         .font(.system(.title, design: .monospaced))
         .fontWeight(.bold)
         .multilineTextAlignment(.center)
-        .kerning(6)
+        .keyboardType(.asciiCapable)
         .textInputAutocapitalization(.characters)
         .autocorrectionDisabled()
+        .focused($focusedField, equals: .code)
+        .submitLabel(.join)
+        .onSubmit { attemptJoin() }
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -145,6 +181,7 @@ struct JoinSessionSheet: View {
     isPresented = false
     joinCodeInput = ""
     displayNameInput = ""
+    viewModel.errorMessage = nil
     viewModel.stopBrowsingForNearbySessions()
   }
 }

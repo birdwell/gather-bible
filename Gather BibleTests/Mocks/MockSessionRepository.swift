@@ -92,6 +92,7 @@ final class MockSessionRepository: SessionRepository {
     sessionId: String,
     userId: String,
     joinCode: String,
+    hostDisplayName: String,
     initialBook: String,
     initialChapter: Int
   ) async throws {
@@ -99,6 +100,7 @@ final class MockSessionRepository: SessionRepository {
     lastSessionId = sessionId
     lastUserId = userId
     lastJoinCode = joinCode
+    lastDisplayName = hostDisplayName
     if let error = shouldThrowError { throw error }
   }
 
@@ -114,10 +116,11 @@ final class MockSessionRepository: SessionRepository {
     if let error = shouldThrowError { throw error }
   }
 
-  func leaveSession(sessionId: String, userId: String, isHost: Bool) async {
+  func leaveSession(sessionId: String, userId: String, isHost: Bool) async throws {
     leaveSessionCalled = true
     lastSessionId = sessionId
     lastUserId = userId
+    if let error = shouldThrowError { throw error }
   }
 
   func startListening(sessionId: String) {
