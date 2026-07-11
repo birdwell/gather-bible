@@ -16,6 +16,9 @@ struct NearbySessionsView: View {
         }
       }
     }
+    .onAppear {
+      viewModel.startBrowsingForNearbySessions()
+    }
   }
 
   private var header: some View {
@@ -28,20 +31,19 @@ struct NearbySessionsView: View {
       Spacer()
 
       if viewModel.isBrowsingNearby {
-        Button {
+        Button("Stop") {
           viewModel.stopBrowsingForNearbySessions()
-        } label: {
-          Text("Stop")
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
+        .frame(minHeight: 44)
       } else {
-        Button {
+        Button("Search") {
           viewModel.startBrowsingForNearbySessions()
-        } label: {
-          Text("Search")
-            .font(.caption)
         }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
+        .frame(minHeight: 44)
       }
     }
   }
@@ -106,6 +108,13 @@ struct NearbySessionRow: View {
       .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .buttonStyle(.plain)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Join \(session.hostName)'s session, code \(spokenCode)")
+    .accessibilityAddTraits(.isButton)
+  }
+
+  private var spokenCode: String {
+    session.joinCode.map { String($0) }.joined(separator: " ")
   }
 }
 

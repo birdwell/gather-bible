@@ -9,6 +9,10 @@ struct SessionDetailView: View {
   @ObservedObject var viewModel: SessionViewModel
   @State private var showingJoinSheet = false
   @State private var showingCreateSheet = false
+  @State private var showingLeaveConfirmation = false
+
+  // Scales the hero glyph with Dynamic Type instead of a fixed 64pt size.
+  @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 64
 
   var body: some View {
     ScrollView {
@@ -20,7 +24,7 @@ struct SessionDetailView: View {
     }
     .navigationTitle("Session")
     .sheet(isPresented: $showingJoinSheet) {
-      JoinSessionSheet(viewModel: viewModel, isPresented: $showingJoinSheet)
+      JoinSessionSheet(viewModel: viewModel, isPresented: $showingJoinSheet, initialCode: nil)
     }
     .sheet(isPresented: $showingCreateSheet) {
       CreateSessionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)
@@ -41,15 +45,21 @@ struct SessionDetailView: View {
   private var sessionInfoCard: some View {
     VStack(spacing: 16) {
       HStack {
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Session Code")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-          HStack(spacing: 12) {
+        HStack(spacing: 12) {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Session Code")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
             Text(viewModel.joinCode)
               .font(.system(.largeTitle, design: .monospaced, weight: .bold))
-            CopyableCodeButton(code: viewModel.joinCode)
           }
+          // Label + value read as one VoiceOver stop; the copy button stays
+          // separately focusable beside it.
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel("Session Code")
+          .accessibilityValue(viewModel.joinCode)
+
+          CopyableCodeButton(code: viewModel.joinCode)
         }
 
         Spacer()
@@ -62,6 +72,9 @@ struct SessionDetailView: View {
             .font(.title2)
             .fontWeight(.medium)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Reading")
+        .accessibilityValue("\(viewModel.currentBook) \(viewModel.currentChapter)")
       }
 
       Divider()
@@ -108,22 +121,48 @@ struct SessionDetailView: View {
         Button {
           Task { await viewModel.claimHost() }
         } label: {
-          Label("Claim Host", systemImage: "crown.fill")
-            .frame(maxWidth: .infinity)
+          if viewModel.isLoading {
+            ProgressView()
+              .frame(maxWidth: .infinity)
+          } else {
+            Label("Claim Host", systemImage: "crown.fill")
+              .frame(maxWidth: .infinity)
+          }
         }
         .buttonStyle(.borderedProminent)
         .tint(.orange)
         .controlSize(.large)
+        .disabled(viewModel.isLoading)
       }
 
       Button(role: .destructive) {
-        Task { await viewModel.leaveSession() }
+        showingLeaveConfirmation = true
       } label: {
         Label("Leave Session", systemImage: "xmark.circle.fill")
           .frame(maxWidth: .infinity)
       }
       .buttonStyle(.bordered)
       .controlSize(.large)
+      .disabled(viewModel.isLoading)
+      .confirmationDialog(
+        viewModel.isHost ? "End Session for Everyone?" : "Leave Session?",
+        isPresented: $showingLeaveConfirmation,
+        titleVisibility: .visible
+      ) {
+        Button(
+          viewModel.isHost ? "End Session" : "Leave Session",
+          role: .destructive
+        ) {
+          Task { await viewModel.leaveSession() }
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text(
+          viewModel.isHost
+            ? "This ends the session for all participants and can't be undone."
+            : "You'll leave this session and stop following the host."
+        )
+      }
     }
   }
 
@@ -133,8 +172,9 @@ struct SessionDetailView: View {
 
       VStack(spacing: 16) {
         Image(systemName: "person.2.fill")
-          .font(.system(size: 64))
+          .font(.system(size: heroIconSize))
           .foregroundStyle(.secondary)
+          .accessibilityHidden(true)
 
         Text("Read Together")
           .font(.largeTitle)
@@ -151,11 +191,17 @@ struct SessionDetailView: View {
         Button {
           showingCreateSheet = true
         } label: {
-          Label("Create Session", systemImage: "plus.circle.fill")
-            .frame(maxWidth: .infinity)
+          if viewModel.isLoading {
+            ProgressView()
+              .frame(maxWidth: .infinity)
+          } else {
+            Label("Create Session", systemImage: "plus.circle.fill")
+              .frame(maxWidth: .infinity)
+          }
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
+        .disabled(viewModel.isLoading)
 
         Button {
           showingJoinSheet = true
@@ -165,6 +211,7 @@ struct SessionDetailView: View {
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
+        .disabled(viewModel.isLoading)
       }
       .frame(maxWidth: 320)
 

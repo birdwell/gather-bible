@@ -62,7 +62,7 @@ struct ReaderSettingsSheet: View {
           }
         } label: {
           Text("A")
-            .font(.system(size: 16, weight: .medium))
+            .font(.body.weight(.medium))
             .frame(width: 44, height: 44)
             .background(Color(.secondarySystemBackground))
             .clipShape(Circle())
@@ -79,7 +79,7 @@ struct ReaderSettingsSheet: View {
           }
         } label: {
           Text("A")
-            .font(.system(size: 24, weight: .medium))
+            .font(.title.weight(.medium))
             .frame(width: 44, height: 44)
             .background(Color(.secondarySystemBackground))
             .clipShape(Circle())
@@ -92,49 +92,23 @@ struct ReaderSettingsSheet: View {
     }
   }
 
+  /// Standard `Slider` mapped onto the discrete size steps. Using the system
+  /// control keeps free accessibility, RTL, and 44pt hit-target behavior.
   private var fontSizeSlider: some View {
-    GeometryReader { geometry in
-      let stepWidth = geometry.size.width / CGFloat(readerSettings.availableFontSizes.count - 1)
-      let currentPosition = stepWidth * CGFloat(readerSettings.currentSizeIndex)
-
-      ZStack(alignment: .leading) {
-        Capsule()
-          .fill(Color(.systemGray4))
-          .frame(height: 4)
-
-        Capsule()
-          .fill(Color.accentColor)
-          .frame(width: currentPosition + 8, height: 4)
-
-        Circle()
-          .fill(Color.accentColor)
-          .frame(width: 20, height: 20)
-          .offset(x: currentPosition - 6)
-          .gesture(
-            DragGesture()
-              .onChanged { value in
-                let newIndex = Int(round(value.location.x / stepWidth))
-                let clampedIndex = max(0, min(newIndex, readerSettings.availableFontSizes.count - 1))
-                if clampedIndex != readerSettings.currentSizeIndex {
-                  readerSettings.fontSize = readerSettings.availableFontSizes[clampedIndex]
-                }
-              }
-          )
-      }
-      .frame(height: 20)
-      .frame(maxHeight: .infinity)
-    }
-    .frame(height: 44)
-    .accessibilityElement()
+    Slider(
+      value: Binding(
+        get: { Double(readerSettings.currentSizeIndex) },
+        set: { newValue in
+          let index = max(
+            0, min(Int(newValue.rounded()), readerSettings.availableFontSizes.count - 1))
+          readerSettings.fontSize = readerSettings.availableFontSizes[index]
+        }
+      ),
+      in: 0...Double(readerSettings.availableFontSizes.count - 1),
+      step: 1
+    )
     .accessibilityLabel("Font size")
     .accessibilityValue("\(Int(readerSettings.fontSize)) points")
-    .accessibilityAdjustableAction { direction in
-      switch direction {
-      case .increment: readerSettings.increaseFontSize()
-      case .decrement: readerSettings.decreaseFontSize()
-      @unknown default: break
-      }
-    }
   }
 
   private var fontFamilySection: some View {
@@ -172,7 +146,7 @@ private struct FontButton: View {
   var body: some View {
     Button(action: action) {
       Text(font.name)
-        .font(.custom(font.family, size: 14))
+        .font(.custom(font.family, size: 14, relativeTo: .subheadline))
         .lineLimit(1)
         .minimumScaleFactor(0.8)
         .padding(.horizontal, 12)

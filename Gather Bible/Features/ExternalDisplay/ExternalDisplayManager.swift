@@ -41,7 +41,7 @@ final class ExternalDisplayManager {
   private func checkForExistingExternalScenes() {
     for session in UIApplication.shared.openSessions {
       if let scene = session.scene as? UIWindowScene,
-        scene.screen != UIScreen.main
+        isExternalScene(scene)
       {
         handleSceneConnect(scene)
         break
@@ -49,8 +49,16 @@ final class ExternalDisplayManager {
     }
   }
 
+  /// Identifies external displays by scene role rather than the deprecated
+  /// `UIScreen.main` comparison. Any window scene that isn't the main app
+  /// window counts as external, so displays connected under other external
+  /// roles (e.g. the pre-iOS 16 interactive role) are still detected.
+  private func isExternalScene(_ scene: UIWindowScene) -> Bool {
+    scene.session.role != .windowApplication
+  }
+
   private func handleSceneConnect(_ scene: UIWindowScene) {
-    guard scene.screen != UIScreen.main else { return }
+    guard isExternalScene(scene) else { return }
 
     externalWindowScene = scene
     isExternalDisplayConnected = true
@@ -88,7 +96,9 @@ final class ExternalDisplayManager {
 
     let tvReaderView = TVReaderView(viewModel: viewModel)
     let hostingController = UIHostingController(rootView: tvReaderView)
-    hostingController.view.backgroundColor = .black
+    // Near-black rather than pure black to reduce halation on TVs, matching
+    // TVReaderView's background.
+    hostingController.view.backgroundColor = UIColor(white: 0.08, alpha: 1)
 
     window.rootViewController = hostingController
     window.isHidden = false

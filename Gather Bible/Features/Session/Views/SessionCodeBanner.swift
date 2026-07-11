@@ -16,6 +16,7 @@ struct SessionCodeBanner: View {
 
   @State private var codeCopied = false
   @State private var showingQRCode = false
+  @State private var resetTask: Task<Void, Never>?
 
   @ScaledMetric(relativeTo: .largeTitle) private var codeFontSize: CGFloat = 34
 
@@ -62,7 +63,7 @@ struct SessionCodeBanner: View {
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(codeCopied ? "Code copied" : "Copy code")
-        .accessibilityHint(codeCopied ? "Code is already copied to clipboard" : "Double tap to copy session code to clipboard")
+        .accessibilityHint("Copies the session code to the clipboard")
       }
 
       if codeCopied {
@@ -86,7 +87,7 @@ struct SessionCodeBanner: View {
           }
           .buttonStyle(.bordered)
           .accessibilityLabel("Show QR code")
-          .accessibilityHint("Double tap to display a QR code for others to scan and join")
+          .accessibilityHint("Shows a QR code for others to scan and join")
         }
       }
     }
@@ -97,6 +98,9 @@ struct SessionCodeBanner: View {
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: codeCopied)
     .accessibilityElement(children: .combine)
     .accessibilityLabel(bannerAccessibilityLabel)
+    .sensoryFeedback(trigger: codeCopied) { _, copied in
+      copied ? .success : nil
+    }
     .sheet(isPresented: $showingQRCode) {
       SessionQRCodeView(sessionCode: code)
     }
@@ -105,9 +109,13 @@ struct SessionCodeBanner: View {
   private func copyCode() {
     UIPasteboard.general.string = code
     codeCopied = true
+    AccessibilityNotification.Announcement("Code copied").post()
 
-    // Reset after 2 seconds
-    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+    // Reset after 2 seconds, cancelling any in-flight reset.
+    resetTask?.cancel()
+    resetTask = Task { @MainActor in
+      try? await Task.sleep(for: .seconds(2))
+      guard !Task.isCancelled else { return }
       codeCopied = false
     }
   }

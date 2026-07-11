@@ -29,6 +29,8 @@ struct DiscussionPromptSheet: View {
           StyledTextEditor(text: $responseText, minHeight: 120)
         }
 
+        errorMessage
+
         Spacer()
       }
       .padding()
@@ -37,6 +39,7 @@ struct DiscussionPromptSheet: View {
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Skip") {
+            viewModel.errorMessage = nil
             viewModel.dismissDiscussionPrompt()
             dismiss()
           }
@@ -48,7 +51,9 @@ struct DiscussionPromptSheet: View {
             Button("Submit") {
               Task {
                 await viewModel.submitDiscussionResponse(response: trimmedResponse)
-                dismiss()
+                if viewModel.errorMessage == nil {
+                  dismiss()
+                }
               }
             }
             .disabled(trimmedResponse.isEmpty)
@@ -57,7 +62,35 @@ struct DiscussionPromptSheet: View {
       }
     }
     .presentationDetents([.medium, .large])
-    .interactiveDismissDisabled()
+    .interactiveDismissDisabled(!trimmedResponse.isEmpty)
+    .onAppear {
+      viewModel.errorMessage = nil
+      viewModel.isInlineErrorSheetPresented = true
+    }
+    .onDisappear {
+      viewModel.isInlineErrorSheetPresented = false
+      viewModel.errorMessage = nil
+    }
+  }
+
+  @ViewBuilder
+  private var errorMessage: some View {
+    if let error = viewModel.errorMessage {
+      HStack {
+        Image(systemName: "exclamationmark.triangle.fill")
+          .accessibilityHidden(true)
+        Text(error)
+      }
+      .font(.subheadline)
+      .foregroundStyle(.red)
+      .padding()
+      .frame(maxWidth: .infinity)
+      .background(Color.red.opacity(0.1))
+      .clipShape(RoundedRectangle(cornerRadius: 8))
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel("Error: \(error)")
+      .accessibilityAddTraits(.isStaticText)
+    }
   }
 }
 

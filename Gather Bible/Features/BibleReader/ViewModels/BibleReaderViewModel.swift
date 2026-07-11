@@ -30,6 +30,14 @@ final class BibleReaderViewModel {
   var selectedVersionBooks: [BibleBook] = []
   var isLoadingVersions = true
 
+  /// User-facing message set when versions/books fail to load. `nil` when there's no error.
+  var loadErrorMessage: String?
+
+  /// True once books for the current version are available.
+  var booksLoaded: Bool {
+    !selectedVersionBooks.isEmpty
+  }
+
   // MARK: - UI State
   var showVersionPicker = false
   var showBookPicker = false
@@ -44,6 +52,11 @@ final class BibleReaderViewModel {
   // MARK: - Private State
   private var lastPublishedOffset: Double = 0
   private var cancellables = Set<AnyCancellable>()
+
+  /// Guards so we don't refetch versions on every view appearance / tab switch.
+  private var hasLoadedVersions = false
+  /// Guards so we only attach one Combine sink for session updates.
+  private var hasSubscribed = false
 
   // MARK: - Dependencies
   private weak var sessionViewModel: SessionViewModel?
@@ -61,6 +74,28 @@ final class BibleReaderViewModel {
     !isHost && followHost
   }
 
+  /// Whether there's a previous chapter (or previous book) to move to.
+  var canGoPrevious: Bool {
+    guard
+      let currentBookIndex = selectedVersionBooks.firstIndex(where: {
+        ($0.id ?? "") == selectedBook
+      })
+    else { return false }
+    return selectedChapter > 1 || currentBookIndex > 0
+  }
+
+  /// Whether there's a next chapter (or next book) to move to.
+  var canGoNext: Bool {
+    guard
+      let currentBookIndex = selectedVersionBooks.firstIndex(where: {
+        ($0.id ?? "") == selectedBook
+      })
+    else { return false }
+    let chapterCount = selectedVersionBooks[currentBookIndex].chapters?.count ?? 1
+    return selectedChapter < chapterCount
+      || currentBookIndex < selectedVersionBooks.count - 1
+  }
+
   // MARK: - Initialization
   init(sessionViewModel: SessionViewModel? = nil) {
     self.sessionViewModel = sessionViewModel
@@ -73,7 +108,9 @@ final class BibleReaderViewModel {
   }
 
   func subscribeToSessionUpdates() {
+    guard !hasSubscribed else { return }
     guard let sessionViewModel = sessionViewModel else { return }
+    hasSubscribed = true
 
     sessionViewModel.$currentState
       .compactMap { $0 }
@@ -171,26 +208,55 @@ final class BibleReaderViewModel {
   }
 
   // MARK: - Data Loading
-  func loadVersions() {
+
+  /// Loads available versions. Skips the network fetch if versions were already
+  /// loaded (e.g. on a tab switch) unless `force` is true (used by Retry).
+  func loadVersions(force: Bool = false) {
+    guard force || !hasLoadedVersions else { return }
+
     Task {
+      isLoadingVersions = true
+      loadErrorMessage = nil
       do {
         let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "en"
         availableVersions = try await YouVersionConfig.getAvailableVersions(
           forLanguageTag: deviceLanguage)
 
+        hasLoadedVersions = true
         isLoadingVersions = false
 
-        if let niv = availableVersions.first(where: { $0.id == 111 }) {
-          selectedVersionId = niv.id
-        } else if let firstVersion = availableVersions.first {
-          selectedVersionId = firstVersion.id
+        // Only apply the NIV/first-version default when the user's current
+        // selection isn't available, so a forced reload (Retry) preserves
+        // the translation they chose.
+        if !availableVersions.contains(where: { $0.id == selectedVersionId }) {
+          if let niv = availableVersions.first(where: { $0.id == 111 }) {
+            selectedVersionId = niv.id
+          } else if let firstVersion = availableVersions.first {
+            selectedVersionId = firstVersion.id
+          }
         }
 
         await loadBooksForVersion()
       } catch {
         isLoadingVersions = false
+        loadErrorMessage =
+          "We couldn't load Bible versions. Check your connection and try again."
         print("📖 [BibleReader] ❌ Error loading versions: \(error)")
       }
+    }
+  }
+
+  /// Re-runs the failed load. If versions are already loaded, only the current
+  /// version's books are refetched so the user's selected translation is kept;
+  /// otherwise the full version list is loaded. Used by the reader's Retry button.
+  func retryLoad() {
+    if hasLoadedVersions {
+      Task {
+        loadErrorMessage = nil
+        await loadBooksForVersion()
+      }
+    } else {
+      loadVersions(force: true)
     }
   }
 
@@ -200,13 +266,19 @@ final class BibleReaderViewModel {
 
       if let books = version.books {
         selectedVersionBooks = books
+        loadErrorMessage = nil
 
         if !books.contains(where: { ($0.id ?? "") == selectedBook }) {
           selectedBook = books.first?.id ?? "GEN"
           selectedChapter = 1
         }
+      } else {
+        loadErrorMessage =
+          "We couldn't load this translation. Check your connection and try again."
       }
     } catch {
+      loadErrorMessage =
+        "We couldn't load this translation. Check your connection and try again."
       print("📖 [BibleReader] ❌ Error loading books: \(error)")
     }
   }

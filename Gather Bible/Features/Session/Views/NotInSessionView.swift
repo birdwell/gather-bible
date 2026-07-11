@@ -66,7 +66,7 @@ struct NotInSessionView: View {
       .buttonStyle(.borderedProminent)
       .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
-      .accessibilityHint("Double tap to start a new reading session")
+      .accessibilityHint("Starts a new reading session")
 
       Button {
         showingJoinSheet = true
@@ -77,7 +77,7 @@ struct NotInSessionView: View {
       .buttonStyle(.bordered)
       .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
-      .accessibilityHint("Double tap to join an existing session with a code")
+      .accessibilityHint("Joins an existing session with a code")
     }
     .sheet(isPresented: $showingCreateSheet) {
       CreateSessionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)

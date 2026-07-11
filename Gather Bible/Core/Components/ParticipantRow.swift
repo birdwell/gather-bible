@@ -13,12 +13,15 @@ struct ParticipantRow: View {
   var isCurrentUser: Bool = false
   var showActiveIndicator: Bool = true
 
+  @ScaledMetric(relativeTo: .body) private var dotSize: CGFloat = 10
+
   var body: some View {
     HStack {
       if showActiveIndicator {
         Circle()
-          .fill(participant.active ? .green : .gray)
-          .frame(width: 10, height: 10)
+          .fill(participant.active ? Color.green : Color.secondary)
+          .frame(width: dotSize, height: dotSize)
+          .accessibilityHidden(true)
       }
 
       VStack(alignment: .leading, spacing: 4) {
@@ -30,10 +33,13 @@ struct ParticipantRow: View {
             Image(systemName: "crown.fill")
               .font(.caption)
               .foregroundStyle(.orange)
+              .accessibilityHidden(true)
           }
         }
 
-        if !participant.active && !showActiveIndicator {
+        // Textual (non-color) status cue: shown for any inactive participant so
+        // status is never conveyed by the colored dot alone.
+        if !participant.active {
           Text("Inactive")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -49,6 +55,30 @@ struct ParticipantRow: View {
       }
     }
     .padding(.vertical, 4)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(accessibilityLabel)
+  }
+
+  /// Composes a single spoken label from the row's visible state, e.g.
+  /// "Sarah, Host, Active, You".
+  private var accessibilityLabel: String {
+    var parts: [String] = [participant.displayName]
+
+    if participant.isHost {
+      parts.append("Host")
+    }
+
+    if showActiveIndicator {
+      parts.append(participant.active ? "Active" : "Inactive")
+    } else if !participant.active {
+      parts.append("Inactive")
+    }
+
+    if isCurrentUser {
+      parts.append("You")
+    }
+
+    return parts.joined(separator: ", ")
   }
 }
 

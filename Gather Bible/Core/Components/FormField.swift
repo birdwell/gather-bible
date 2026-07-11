@@ -24,8 +24,12 @@ struct FormField<Content: View>: View {
       Text(label)
         .font(.subheadline)
         .foregroundStyle(.secondary)
+        // Hidden from VoiceOver to avoid double-reading: the label is instead
+        // associated directly with the input below.
+        .accessibilityHidden(true)
 
       content()
+        .accessibilityLabel(label)
 
       if let helper {
         Text(helper)

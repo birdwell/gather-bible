@@ -23,6 +23,7 @@ struct TVReaderView: View {
 
           BibleTextView(viewModel.bibleReference, textOptions: tvTextOptions)
             .id("\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)")
+            .foregroundStyle(.white.opacity(0.95))
             .frame(maxWidth: min(geometry.size.width * 0.75, 1200))
             .padding(.horizontal, 80)
             .padding(.vertical, 60)
@@ -31,7 +32,8 @@ struct TVReaderView: View {
       }
       .scrollIndicators(.hidden)
     }
-    .background(Color.black)
+    // Near-black rather than pure black to reduce halation on TVs.
+    .background(Color(white: 0.08))
     .preferredColorScheme(.dark)
     .persistentSystemOverlays(.hidden)
   }
@@ -40,7 +42,7 @@ struct TVReaderView: View {
     VStack(spacing: 8) {
       Text(bookAndChapterTitle)
         .font(.system(size: 36, weight: .semibold, design: .serif))
-        .foregroundStyle(.white)
+        .foregroundStyle(.white.opacity(0.95))
 
       Text(versionAbbreviation)
         .font(.system(size: 18, weight: .medium))

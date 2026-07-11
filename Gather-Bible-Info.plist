@@ -19,6 +19,6 @@
 		<string>_gather-bible._udp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Gather Bible uses the local network to discover nearby Bible study sessions.</string>
+	<string>Gather Bible looks for Bible study sessions on your Wi-Fi network so you can join a nearby group without typing a code.</string>
 </dict>
 </plist>

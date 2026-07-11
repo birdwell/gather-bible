@@ -24,11 +24,28 @@ class SessionViewModel: ObservableObject {
   @Published var isHost = false
   @Published var joinCode = ""
   @Published private(set) var sessionId: String?
-  @Published var userId: String = UUID().uuidString
+  @Published var userId: String = SessionViewModel.persistentUserId()
+
+  /// Stable per-install user identifier, persisted across launches so relaunching
+  /// does not create ghost participants.
+  private static func persistentUserId() -> String {
+    let key = "gather.userId"
+    let defaults = UserDefaults.standard
+    if let existing = defaults.string(forKey: key), !existing.isEmpty {
+      return existing
+    }
+    let newId = UUID().uuidString
+    defaults.set(newId, forKey: key)
+    return newId
+  }
 
   // MARK: - UI State
 
   @Published var errorMessage: String?
+
+  /// True while a sheet that renders `errorMessage` inline is presented, so
+  /// container-level error alerts stay quiet instead of double-presenting.
+  @Published var isInlineErrorSheetPresented = false
   @Published var isLoading = false
   @Published var showDiscussionPrompt = false
   @Published var pendingJoinCode: String?
@@ -185,6 +202,7 @@ class SessionViewModel: ObservableObject {
         sessionId: newSessionId,
         userId: userId,
         joinCode: joinCode,
+        hostDisplayName: hostDisplayName,
         initialBook: initialBook,
         initialChapter: initialChapter
       )
@@ -248,9 +266,21 @@ class SessionViewModel: ObservableObject {
 
   func leaveSession() async {
     isLoading = true
+    errorMessage = nil
 
     if let sessionId = sessionId {
-      await repository.leaveSession(sessionId: sessionId, userId: userId, isHost: isHost)
+      do {
+        try await repository.leaveSession(sessionId: sessionId, userId: userId, isHost: isHost)
+      } catch {
+        SentrySDK.capture(error: error) { scope in
+          scope.setTag(value: "leaveSession", key: "operation")
+        }
+        handleError(error)
+        // Keep local session state: Firebase may still list this participant,
+        // so the UI must keep reflecting the live session until leave succeeds.
+        isLoading = false
+        return
+      }
     }
 
     repository.stopListening()

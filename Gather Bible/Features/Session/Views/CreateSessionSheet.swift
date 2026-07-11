@@ -7,12 +7,20 @@ struct CreateSessionSheet: View {
   @State private var hostNameInput = ""
   @FocusState private var isNameFieldFocused: Bool
 
+  private var trimmedName: String {
+    hostNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
   var body: some View {
     NavigationStack {
       VStack(spacing: 24) {
         FormField(label: "Your Name", helper: "This is how others will see you in nearby sessions") {
           TextField("Enter your name", text: $hostNameInput)
             .focused($isNameFieldFocused)
+            .textContentType(.name)
+            .textInputAutocapitalization(.words)
+            .submitLabel(.done)
+            .onSubmit { attemptCreate() }
             .padding()
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -33,16 +41,8 @@ struct CreateSessionSheet: View {
           if viewModel.isLoading {
             ProgressView()
           } else {
-            Button("Create") {
-              Task {
-                await viewModel.createSession(
-                  hostDisplayName: hostNameInput.isEmpty ? "Host" : hostNameInput
-                )
-                if viewModel.isInSession {
-                  dismiss()
-                }
-              }
-            }
+            Button("Create") { attemptCreate() }
+              .disabled(trimmedName.isEmpty)
           }
         }
       }
@@ -50,7 +50,23 @@ struct CreateSessionSheet: View {
     .presentationDetents([.medium])
     .presentationDragIndicator(.visible)
     .onAppear {
+      viewModel.errorMessage = nil
+      viewModel.isInlineErrorSheetPresented = true
       isNameFieldFocused = true
+    }
+    .onDisappear {
+      viewModel.isInlineErrorSheetPresented = false
+      viewModel.errorMessage = nil
+    }
+  }
+
+  private func attemptCreate() {
+    guard !trimmedName.isEmpty else { return }
+    Task {
+      await viewModel.createSession(hostDisplayName: trimmedName)
+      if viewModel.isInSession {
+        dismiss()
+      }
     }
   }
 
@@ -71,6 +87,7 @@ struct CreateSessionSheet: View {
   private func dismiss() {
     isPresented = false
     hostNameInput = ""
+    viewModel.errorMessage = nil
   }
 }
 

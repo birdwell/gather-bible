@@ -10,7 +10,15 @@ import SwiftUI
 /// A styled text editor with consistent background and border styling
 struct StyledTextEditor: View {
   @Binding var text: String
-  var minHeight: CGFloat = 100
+
+  /// Scales the caller-supplied minimum height with Dynamic Type so the editor
+  /// grows alongside the text it contains. The passed value is the base.
+  @ScaledMetric(relativeTo: .body) private var minHeight: CGFloat
+
+  init(text: Binding<String>, minHeight: CGFloat = 100) {
+    self._text = text
+    self._minHeight = ScaledMetric(wrappedValue: minHeight, relativeTo: .body)
+  }
 
   var body: some View {
     TextEditor(text: $text)

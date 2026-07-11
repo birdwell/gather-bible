@@ -15,6 +15,7 @@ struct InSessionView: View {
   @State private var showingCreateDiscussion = false
   @State private var showingDraftDiscussions = false
   @State private var showingDiscussionResults = false
+  @State private var showingLeaveConfirmation = false
 
   private var isRegularWidth: Bool {
     horizontalSizeClass == .regular
@@ -70,6 +71,26 @@ struct InSessionView: View {
     ) {
       DiscussionPromptSheet(viewModel: viewModel)
     }
+    .confirmationDialog(
+      viewModel.isHost ? "End Session for Everyone?" : "Leave Session?",
+      isPresented: $showingLeaveConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button(viewModel.isHost ? "End Session" : "Leave Session", role: .destructive) {
+        Task { await viewModel.leaveSession() }
+      }
+      Button("Cancel", role: .cancel) {}
+    } message: {
+      Text(
+        viewModel.isHost
+          ? "This ends the session for all participants and can't be undone."
+          : "You'll leave this reading session and stop following the host."
+      )
+    }
+    // Notification-style haptic when a discussion prompt arrives for a guest.
+    .sensoryFeedback(trigger: viewModel.showDiscussionPrompt) { _, isShowing in
+      isShowing ? .success : nil
+    }
   }
 
   // MARK: - Participants Row
@@ -118,7 +139,7 @@ struct InSessionView: View {
     .buttonStyle(.borderedProminent)
     .tint(.orange)
     .disabled(viewModel.isLoading)
-    .accessibilityHint("Double tap to become the session host")
+    .accessibilityHint("Becomes the session host")
   }
 
   // MARK: - Discussion Section
@@ -167,7 +188,7 @@ struct InSessionView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Active discussion: \(discussion.question)")
         .accessibilityValue("\(viewModel.discussionResponses.count) responses")
-        .accessibilityHint("Double tap to view responses")
+        .accessibilityHint("Opens the discussion responses")
       }
 
       // Discussion action buttons
@@ -180,7 +201,7 @@ struct InSessionView: View {
         }
         .buttonStyle(.bordered)
         .disabled(viewModel.activeDiscussion != nil)
-        .accessibilityHint("Double tap to create a new discussion question")
+        .accessibilityHint("Creates a new discussion question")
 
         if !viewModel.draftDiscussions.isEmpty {
           Button {
@@ -190,7 +211,7 @@ struct InSessionView: View {
           }
           .buttonStyle(.bordered)
           .accessibilityLabel("\(viewModel.draftDiscussions.count) draft discussions")
-          .accessibilityHint("Double tap to view saved draft discussions")
+          .accessibilityHint("Opens your saved draft discussions")
         }
       }
     }
@@ -200,14 +221,14 @@ struct InSessionView: View {
 
   private var leaveButton: some View {
     Button(role: .destructive) {
-      Task { await viewModel.leaveSession() }
+      showingLeaveConfirmation = true
     } label: {
       Label("Leave Session", systemImage: "xmark.circle.fill")
         .frame(maxWidth: .infinity)
     }
     .buttonStyle(.bordered)
     .disabled(viewModel.isLoading)
-    .accessibilityHint("Double tap to leave this session")
+    .accessibilityHint(viewModel.isHost ? "Ends the session for everyone" : "Leaves this reading session")
   }
 }
 

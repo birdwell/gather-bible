@@ -33,6 +33,7 @@ protocol SessionRepository: AnyObject {
     sessionId: String,
     userId: String,
     joinCode: String,
+    hostDisplayName: String,
     initialBook: String,
     initialChapter: Int
   ) async throws
@@ -46,7 +47,7 @@ protocol SessionRepository: AnyObject {
 
   /// Leave the current session
   /// If isHost is true, marks session inactive; otherwise removes participant
-  func leaveSession(sessionId: String, userId: String, isHost: Bool) async
+  func leaveSession(sessionId: String, userId: String, isHost: Bool) async throws
 
   /// Start listening to real-time updates for a session
   func startListening(sessionId: String)
