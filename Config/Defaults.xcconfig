@@ -1,0 +1,2 @@
+// Empty default. Config/Local.xcconfig, when present, overrides this.
+YOUVERSION_APP_KEY =

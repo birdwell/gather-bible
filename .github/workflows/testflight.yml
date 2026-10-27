@@ -17,12 +17,14 @@ jobs:
     name: Build and upload to TestFlight
     runs-on: macos-26
     timeout-minutes: 90
+    permissions:
+      contents: read
     env:
       APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Select Xcode
         run: |
@@ -49,14 +51,28 @@ jobs:
             echo "SENTRY_AUTH_TOKEN not set; skipping Sentry dSYM upload."
           fi
 
-      - name: Archive
+      - name: Require YouVersion app key
+        env:
+          YOUVERSION_APP_KEY: ${{ secrets.YOUVERSION_APP_KEY }}
         run: |
+          trimmed=$(printf '%s' "$YOUVERSION_APP_KEY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          if [ -z "$trimmed" ]; then
+            echo "YOUVERSION_APP_KEY is not set. Add it as a GitHub Actions secret before deploying."
+            exit 1
+          fi
+
+      - name: Archive
+        env:
+          YOUVERSION_APP_KEY: ${{ secrets.YOUVERSION_APP_KEY }}
+        run: |
+          trimmed=$(printf '%s' "$YOUVERSION_APP_KEY" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           xcodebuild archive \
             -project "Gather Bible.xcodeproj" \
             -scheme "Gather Bible" \
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/GatherBible.xcarchive" \
             -allowProvisioningUpdates \
+            YOUVERSION_APP_KEY="$trimmed" \
             -authenticationKeyPath "$HOME/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8" \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
