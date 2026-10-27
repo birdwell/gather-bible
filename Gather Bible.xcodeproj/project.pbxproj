@@ -518,6 +518,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gather-Bible-Info.plist";
+				INFOPLIST_KEY_YOUVERSION_APP_KEY = "$(YOUVERSION_APP_KEY)";
+				YOUVERSION_APP_KEY = "";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";
@@ -562,6 +564,8 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gather-Bible-Info.plist";
+				INFOPLIST_KEY_YOUVERSION_APP_KEY = "$(YOUVERSION_APP_KEY)";
+				YOUVERSION_APP_KEY = "";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";
