@@ -12,7 +12,7 @@ firebase/
 ├── functions/            # Cloud Functions
 │   ├── index.js          # Main functions entry point
 │   ├── package.json      # Functions dependencies
-│   ├── .eslintrc.js      # ESLint configuration
+│   ├── eslint.config.js  # ESLint configuration
 │   └── .gitignore        # Functions-specific gitignore
 └── README.md            # This file
 ```
