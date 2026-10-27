@@ -5,7 +5,10 @@
 
 const {getFunctions, httpsCallable} = require("firebase/functions");
 
-// Example usage of lookupJoinCode function
+/**
+ * Example usage of lookupJoinCode.
+ * @param {object} firebaseApp Firebase app.
+ */
 async function testLookupJoinCode(firebaseApp) {
   const functions = getFunctions(firebaseApp);
   const lookupJoinCode = httpsCallable(functions, "lookupJoinCode");
@@ -25,7 +28,10 @@ async function testLookupJoinCode(firebaseApp) {
   }
 }
 
-// Example usage of generateUniqueJoinCode function
+/**
+ * Example usage of generateUniqueJoinCode.
+ * @param {object} firebaseApp Firebase app.
+ */
 async function testGenerateJoinCode(firebaseApp) {
   const functions = getFunctions(firebaseApp);
   const generateUniqueJoinCode = httpsCallable(
@@ -43,7 +49,13 @@ async function testGenerateJoinCode(firebaseApp) {
   }
 }
 
-// Example client-side implementation for joining a session
+/**
+ * Join a session with a join code.
+ * @param {object} firebaseApp Firebase app.
+ * @param {string} joinCode Six-character code.
+ * @param {string} userId Participant id.
+ * @param {string} userName Display name.
+ */
 async function joinSessionWithCode(firebaseApp, joinCode, userId, userName) {
   const functions = getFunctions(firebaseApp);
   const lookupJoinCode = httpsCallable(functions, "lookupJoinCode");
