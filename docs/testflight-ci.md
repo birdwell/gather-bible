@@ -46,7 +46,7 @@ secret**. Add:
 | `APP_STORE_CONNECT_KEY_ID` | The Key ID (e.g. `ABC123DEFG`) |
 | `APP_STORE_CONNECT_ISSUER_ID` | The Issuer ID (a UUID) |
 | `APP_STORE_CONNECT_PRIVATE_KEY` | The `.p8` file contents, base64-encoded: `base64 -i AuthKey_ABC123DEFG.p8 \| pbcopy` |
-| `YOUVERSION_APP_KEY` | YouVersion Platform app key. Required. Copy the rotated value from Infisical into this secret before the next archive. The workflow passes it to `xcodebuild`, which writes it into the app `Info.plist`. |
+| `YOUVERSION_APP_KEY` | YouVersion Platform app key. Required. Copy the rotated value from Infisical into this secret before the next archive. Leading and trailing whitespace is ignored. The workflow passes the trimmed value to `xcodebuild`, which writes it into the app `Info.plist`. |
 | `SENTRY_AUTH_TOKEN` *(optional)* | A Sentry auth token with `project:releases` scope, for dSYM upload |
 
 ### 3. Make sure the app record exists
@@ -74,19 +74,35 @@ This repo does not do that. Do not commit the key. The previous value is in
 git history and should be treated as burned; rotate it in Infisical.
 
 The app reads `YOUVERSION_APP_KEY` from the process environment first, then
-from the `YOUVERSION_APP_KEY` Info.plist entry. If both are missing or still
-the unexpanded `$(YOUVERSION_APP_KEY)` placeholder, launch fails immediately
-in `YouVersionConfig.configure()` with that variable name in the crash message.
+from the `YOUVERSION_APP_KEY` Info.plist entry. The shared scheme does not
+set that environment variable. Simulator launches (`run-iphone17.sh`,
+`run-iphone17pro.sh`, `run-both-sims.sh`, and `simctl launch`) do not receive
+scheme environment variables either, so the key has to be present at build
+time and baked into Info.plist.
+
+`Config/App.xcconfig` is the app target's base configuration. It includes
+`Config/Defaults.xcconfig`, which sets `YOUVERSION_APP_KEY` to empty, and
+then optionally includes gitignored `Config/Local.xcconfig`. A build stops
+before compile if the resolved value is missing or only whitespace. The
+error names the variable and does not print the value. The same check runs
+for the shared scheme (Xcode Run / Archive) and for the simulator scripts.
 
 Set it before a deploy or a local run:
 
 - **GitHub Actions secret `YOUVERSION_APP_KEY`** — required for TestFlight.
-  The workflow stops before archive if the secret is empty. This is the only
-  hosted deploy path.
-- **Local Xcode** — Scheme → Run → Environment Variables → `YOUVERSION_APP_KEY`.
-  That supplies the process environment for Run. For an archive from the
-  command line, also pass `YOUVERSION_APP_KEY="$YOUVERSION_APP_KEY"` as an
-  `xcodebuild` build setting so Release builds embed it in Info.plist.
+  The workflow trims whitespace and stops before archive if the secret is
+  empty. The archive step passes the trimmed value as an `xcodebuild` build
+  setting. This is the only hosted deploy path. Copy the rotated value from
+  Infisical.
+- **Local file** — `cp Config/Local.xcconfig.example Config/Local.xcconfig`,
+  then set `YOUVERSION_APP_KEY` in that file. It is gitignored. Xcode and
+  the simulator scripts both pick it up through `Config/App.xcconfig`.
+- **Local environment** — `export YOUVERSION_APP_KEY=...` before
+  `./run-iphone17.sh`, `./run-iphone17pro.sh`, or `./run-both-sims.sh`.
+  Those scripts trim the value and pass it as an `xcodebuild` build setting,
+  which overrides `Config/Local.xcconfig`. They exit before building if
+  neither the environment nor `Config/Local.xcconfig` has a non-whitespace
+  value.
 - **`.env.example`** — documents the variable with an empty value. The iOS
   app does not load a `.env` file. `.env` is gitignored.
 
