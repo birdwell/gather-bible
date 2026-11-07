@@ -1,0 +1,155 @@
+require "securerandom"
+require "fileutils"
+
+default_platform(:ios)
+skip_docs
+
+APP_ID = "Josh-Birdwell.Gather-Bible"
+TEAM_ID = "HDMU7Y5UNB"
+PROJECT = "Gather Bible.xcodeproj"
+SCHEME = "Gather Bible"
+TARGET = "Gather Bible"
+
+# Machine-local secrets. None of these live in the repo.
+ASC_DIR = File.expand_path("~/.appstoreconnect")
+CONFIG_FILE = File.join(ASC_DIR, "gather-bible.env")
+KEYCHAIN_PASSWORD_FILE = File.join(ASC_DIR, "gather-bible-keychain-password")
+SIGNING_DIR = File.join(ASC_DIR, "gather-bible-signing")
+
+# A dedicated keychain, so builds need no password prompt, even over SSH.
+KEYCHAIN_NAME = "gather-bible-signing"
+KEYCHAIN_PATH = File.expand_path("~/Library/Keychains/#{KEYCHAIN_NAME}.keychain-db")
+
+BUILD_DIR = File.expand_path("../build", __dir__)
+
+# Xcode's export fails with "Copy failed" if it finds Homebrew's rsync first.
+ENV["PATH"] = "/usr/bin:#{ENV['PATH']}"
+
+platform :ios do
+  desc "Create or fetch the distribution certificate and App Store profile"
+  lane :signing do
+    prepare_signing
+  end
+
+  desc "Build the app and upload it to TestFlight"
+  lane :beta do
+    profile_name = prepare_signing
+    build_number = latest_testflight_build_number(
+      api_key: asc_api_key,
+      app_identifier: APP_ID,
+      initial_build_number: 0
+    ) + 1
+
+    # Manual signing only applies to this build. The project stays on automatic.
+    pbxproj = File.expand_path("../#{PROJECT}/project.pbxproj", __dir__)
+    original_pbxproj = File.read(pbxproj)
+
+    begin
+      update_code_signing_settings(
+        path: PROJECT,
+        use_automatic_signing: false,
+        targets: [TARGET],
+        team_id: TEAM_ID,
+        code_sign_identity: "Apple Distribution",
+        profile_name: profile_name
+      )
+
+      build_app(
+        project: PROJECT,
+        scheme: SCHEME,
+        configuration: "Release",
+        destination: "generic/platform=iOS",
+        derived_data_path: File.join(BUILD_DIR, "dd-fastlane"),
+        output_directory: File.join(BUILD_DIR, "testflight-export"),
+        buildlog_path: File.join(BUILD_DIR, "testflight-logs"),
+        archive_path: File.join(BUILD_DIR, "GatherBible.xcarchive"),
+        output_name: "GatherBible.ipa",
+        clean: false,
+        xcargs: "CURRENT_PROJECT_VERSION=#{build_number}",
+        export_method: "app-store",
+        export_options: {
+          provisioningProfiles: { APP_ID => profile_name },
+          uploadSymbols: true
+        }
+      )
+    ensure
+      File.write(pbxproj, original_pbxproj)
+    end
+
+    upload_to_testflight(
+      api_key: asc_api_key,
+      app_identifier: APP_ID,
+      skip_waiting_for_build_processing: true
+    )
+
+    UI.success("Uploaded build #{build_number} to TestFlight.")
+  end
+end
+
+def asc_api_key
+  keys = Dir[File.join(ASC_DIR, "private_keys", "AuthKey_*.p8")]
+  UI.user_error!("Expected one API key in #{ASC_DIR}/private_keys, found #{keys.count}.") unless keys.count == 1
+
+  issuer_id = File.exist?(CONFIG_FILE) ? File.read(CONFIG_FILE)[/^ASC_ISSUER_ID=(.+)$/, 1] : nil
+  UI.user_error!("Add ASC_ISSUER_ID=<id> to #{CONFIG_FILE}.") if issuer_id.to_s.empty?
+
+  app_store_connect_api_key(
+    key_id: File.basename(keys.first, ".p8").delete_prefix("AuthKey_"),
+    issuer_id: issuer_id.strip,
+    key_filepath: keys.first
+  )
+end
+
+def keychain_password
+  return File.read(KEYCHAIN_PASSWORD_FILE).strip if File.exist?(KEYCHAIN_PASSWORD_FILE)
+
+  password = SecureRandom.hex(32)
+  File.write(KEYCHAIN_PASSWORD_FILE, password, perm: 0o600)
+  password
+end
+
+def prepare_keychain
+  if File.exist?(KEYCHAIN_PATH)
+    unlock_keychain(
+      path: KEYCHAIN_PATH,
+      password: keychain_password,
+      add_to_search_list: true,
+      set_default: false
+    )
+  else
+    create_keychain(
+      name: "#{KEYCHAIN_NAME}.keychain",
+      password: keychain_password,
+      unlock: true,
+      timeout: 0,
+      lock_when_sleeps: false,
+      lock_after_timeout: false,
+      add_to_search_list: true,
+      default_keychain: false
+    )
+  end
+end
+
+# Returns the App Store profile name.
+def prepare_signing
+  prepare_keychain
+  FileUtils.mkdir_p(SIGNING_DIR, mode: 0o700)
+
+  get_certificates(
+    api_key: asc_api_key,
+    team_id: TEAM_ID,
+    keychain_path: KEYCHAIN_PATH,
+    keychain_password: keychain_password,
+    output_path: SIGNING_DIR
+  )
+
+  get_provisioning_profile(
+    api_key: asc_api_key,
+    app_identifier: APP_ID,
+    team_id: TEAM_ID,
+    output_path: SIGNING_DIR,
+    readonly: false
+  )
+
+  lane_context[SharedValues::SIGH_NAME]
+end
