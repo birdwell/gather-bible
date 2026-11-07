@@ -30,6 +30,10 @@ struct SessionQRCodeView: View {
   }
 
   var body: some View {
+    sheetContent.appSheet()
+  }
+
+  private var sheetContent: some View {
     NavigationStack {
       ScrollView {
         VStack(spacing: 24) {
@@ -41,8 +45,7 @@ struct SessionQRCodeView: View {
               .frame(width: 250, height: 250)
               .padding(20)
               .background(Color.white)
-              .clipShape(RoundedRectangle(cornerRadius: 16))
-              .shadow(radius: 4)
+              .clipShape(RoundedRectangle(cornerRadius: 12))
               .accessibilityLabel("QR code for session \(sessionCode)")
           } else {
             ProgressView()
@@ -50,14 +53,13 @@ struct SessionQRCodeView: View {
           }
 
           VStack(spacing: 8) {
-            Text("Session Code")
-              .font(.caption)
-              .foregroundStyle(.secondary)
+            Text("Session code")
+              .font(AppFont.caption)
+              .foregroundStyle(AppColor.muted)
 
             Text(sessionCode)
-              .font(.system(.title, design: .monospaced))
+              .font(AppFont.heading)
               .fontWeight(.bold)
-              .kerning(4)
               .accessibilityLabel(spokenCode)
           }
 
@@ -67,22 +69,19 @@ struct SessionQRCodeView: View {
               subject: Text("Join my Bible reading session"),
               message: Text("Tap to join my reading session, or enter code \(sessionCode).")
             ) {
-              Label("Share Invite", systemImage: "square.and.arrow.up")
+              HStack(spacing: 8) {
+                AppIconView(.share)
+                Text("Share invite")
+              }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.appSecondary)
           }
-
-          Text("Have others scan this QR code to join your session")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal)
         }
         .padding()
         .frame(maxWidth: .infinity)
       }
-      .background(Color(.systemBackground))
-      .navigationTitle("Scan to Join")
+      .background(AppColor.ground)
+      .appNavigationTitle("Scan to join")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {

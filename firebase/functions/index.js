@@ -1,6 +1,8 @@
 const {onCall} = require("firebase-functions/v2/https");
 const {initializeApp} = require("firebase-admin/app");
 const {getDatabase} = require("firebase-admin/database");
+const {applyHostClaim, didClaimSucceed} = require("./hostClaim");
+const {findSessionByJoinCode} = require("./sessionRules");
 
 initializeApp();
 const db = getDatabase();
@@ -48,13 +50,7 @@ exports.lookupJoinCode = onCall({cors: true}, async (request) => {
   const code = joinCode.toUpperCase();
   const sessions = (await db.ref("sessions").once("value")).val() || {};
 
-  for (const [sessionId, data] of Object.entries(sessions)) {
-    if (data?.state?.joinCode === code) {
-      return {sessionId, status: "FOUND"};
-    }
-  }
-
-  return {status: "NOT_FOUND"};
+  return findSessionByJoinCode(sessions, code);
 });
 
 /**
@@ -70,25 +66,10 @@ exports.claimHost = onCall({cors: true}, async (request) => {
   const sessionRef = db.ref(`sessions/${sessionId}`);
 
   const result = await sessionRef.transaction((current) => {
-    if (!current?.state?.active) return;
-    if (!current.participants?.[userId]) return;
-    if (current.state.hostId === userId) return current;
-
-    // Remove host from old host
-    const oldHostId = current.state.hostId;
-    if (current.participants[oldHostId]) {
-      current.participants[oldHostId].isHost = false;
-    }
-
-    // Set new host
-    current.state.hostId = userId;
-    current.participants[userId].isHost = true;
-    current.participants[userId].displayName = displayName;
-
-    return current;
+    return applyHostClaim(current, userId, displayName);
   });
 
-  if (!result.committed) {
+  if (!didClaimSucceed(result.committed, result.snapshot.val(), userId)) {
     throw new Error("Failed to claim host");
   }
 

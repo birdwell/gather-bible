@@ -36,32 +36,43 @@ struct VersionPickerSheet: View {
               HStack {
                 VStack(alignment: .leading, spacing: 4) {
                   Text((version.localizedAbbreviation ?? "").uppercased())
-                    .font(.headline)
+                    .font(AppFont.label)
+                    .foregroundStyle(AppColor.ink)
                   Text(version.title ?? "Unknown")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.muted)
                 }
                 Spacer()
                 if isSelected {
-                  Image(systemName: "checkmark")
-                    .foregroundColor(.accentColor)
+                  AppIconView(.check)
+                    .foregroundStyle(AppColor.accent)
                 }
               }
               .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
           }
+          .listStyle(.plain)
+          .scrollContentBackground(.hidden)
         }
       }
       .searchable(text: $searchText, prompt: "Search versions")
-      .navigationTitle("Select Bible Version")
+      .navigationTitle("Choose a version")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        ToolbarItem(placement: .principal) {
+          Text("Choose a version")
+            .font(AppFont.heading)
+            .foregroundStyle(AppColor.ink)
+        }
         ToolbarItem(placement: .confirmationAction) {
           Button("Done") { onDismiss() }
         }
       }
     }
+    .presentationBackground(AppColor.ground)
   }
 }

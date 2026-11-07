@@ -7,9 +7,8 @@ struct AppearancePicker: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Appearance")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .textCase(.uppercase)
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
       Picker("Appearance", selection: $appearance) {
         ForEach(AppAppearance.allCases) { option in

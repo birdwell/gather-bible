@@ -19,6 +19,9 @@ struct SessionState: Codable {
   let versionId: Int
   let updatedAt: Double?
   let active: Bool
+  /// Set only when the host deliberately ends the session. `active` alone can't
+  /// tell that apart from a host who lost their connection and may be replaced.
+  let endedAt: Double?
 
   /// Initialize from Firebase dictionary
   init?(from dictionary: [String: Any]) {
@@ -44,5 +47,6 @@ struct SessionState: Codable {
     self.versionId = dictionary["versionId"] as? Int ?? 111
     self.updatedAt = dictionary["updatedAt"] as? Double
     self.active = active
+    self.endedAt = dictionary["endedAt"] as? Double
   }
 }

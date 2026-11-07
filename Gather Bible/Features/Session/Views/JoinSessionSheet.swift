@@ -14,12 +14,8 @@ struct JoinSessionSheet: View {
 
   @State private var joinCodeInput = ""
   @State private var displayNameInput = ""
-  @FocusState private var focusedField: Field?
-
-  private enum Field: Hashable {
-    case name
-    case code
-  }
+  @FocusState private var isNameFocused: Bool
+  @FocusState private var isCodeFocused: Bool
 
   init(viewModel: SessionViewModel, isPresented: Binding<Bool>, initialCode: String? = nil) {
     self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -38,22 +34,35 @@ struct JoinSessionSheet: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(spacing: 24) {
-          FormField(label: "Your Name", helper: "This is how others will see you") {
-            TextField("Enter your name", text: $displayNameInput)
-              .focused($focusedField, equals: .name)
+        VStack(alignment: .leading, spacing: 24) {
+          FormField(label: "Session code") {
+            SessionCodeField(
+              code: $joinCodeInput,
+              isFocused: $isCodeFocused,
+              onSubmit: { isNameFocused = true },
+              onComplete: {
+                if trimmedName.isEmpty { isNameFocused = true }
+              }
+            )
+          }
+
+          FormField(label: "Your name") {
+            TextField("How others will see you", text: $displayNameInput)
+              .focused($isNameFocused)
               .textContentType(.name)
               .textInputAutocapitalization(.words)
-              .submitLabel(.next)
-              .onSubmit { focusedField = .code }
-              .padding()
-              .background(Color(.secondarySystemBackground))
-              .clipShape(RoundedRectangle(cornerRadius: 12))
+              .submitLabel(.join)
+              .onSubmit { attemptJoin() }
+              .appField()
+          }
+
+          if let error = viewModel.errorMessage {
+            InlineError(message: error)
           }
 
           NearbySessionsView(viewModel: viewModel) { session in
             guard !trimmedName.isEmpty else {
-              focusedField = .name
+              isNameFocused = true
               return
             }
             Task {
@@ -66,37 +75,46 @@ struct JoinSessionSheet: View {
               }
             }
           }
-
-          divider
-
-          sessionCodeInput
-
-          errorMessage
         }
-        .padding()
+        .padding(16)
       }
-      .navigationTitle("Join Session")
-      .navigationBarTitleDisplayMode(.inline)
+      .scrollDismissesKeyboard(.interactively)
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        Button {
+          attemptJoin()
+        } label: {
+          Group {
+            if viewModel.isLoading {
+              ProgressView()
+            } else {
+              Text("Join session")
+            }
+          }
+          .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.appPrimary)
+        .disabled(!canJoin || viewModel.isLoading)
+        .padding(16)
+        .background(AppColor.ground)
+      }
+      .appNavigationTitle("Join a session")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") { dismiss() }
         }
-        ToolbarItem(placement: .confirmationAction) {
-          if viewModel.isLoading {
-            ProgressView()
-          } else {
-            Button("Join") { attemptJoin() }
-              .disabled(!canJoin)
-          }
-        }
       }
     }
-    .presentationDetents([.medium, .large])
+    .presentationDetents([.large])
     .presentationDragIndicator(.visible)
+    .appSheet()
     .onAppear {
       viewModel.errorMessage = nil
       viewModel.isInlineErrorSheetPresented = true
-      focusedField = .name
+      if joinCodeInput.isEmpty {
+        isCodeFocused = true
+      } else {
+        isNameFocused = true
+      }
     }
     .onDisappear {
       viewModel.isInlineErrorSheetPresented = false
@@ -106,7 +124,11 @@ struct JoinSessionSheet: View {
 
   private func attemptJoin() {
     guard canJoin else {
-      if trimmedName.isEmpty { focusedField = .name }
+      if joinCodeInput.count < 6 {
+        isCodeFocused = true
+      } else {
+        isNameFocused = true
+      }
       return
     }
     Task {
@@ -117,63 +139,6 @@ struct JoinSessionSheet: View {
       if viewModel.isInSession {
         dismiss()
       }
-    }
-  }
-
-  private var sessionCodeInput: some View {
-    FormField(label: "Session Code") {
-      TextField("ABC123", text: $joinCodeInput)
-        .font(.system(.title, design: .monospaced))
-        .fontWeight(.bold)
-        .multilineTextAlignment(.center)
-        .keyboardType(.asciiCapable)
-        .textInputAutocapitalization(.characters)
-        .autocorrectionDisabled()
-        .focused($focusedField, equals: .code)
-        .submitLabel(.join)
-        .onSubmit { attemptJoin() }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .onChange(of: joinCodeInput) { _, newValue in
-          joinCodeInput = String(newValue.prefix(6)).uppercased()
-        }
-    }
-  }
-
-  @ViewBuilder
-  private var errorMessage: some View {
-    if let error = viewModel.errorMessage {
-      HStack {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .accessibilityHidden(true)
-        Text(error)
-      }
-      .font(.subheadline)
-      .foregroundStyle(.red)
-      .padding()
-      .frame(maxWidth: .infinity)
-      .background(Color.red.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 8))
-      .accessibilityElement(children: .combine)
-      .accessibilityLabel("Error: \(error)")
-      .accessibilityAddTraits(.isStaticText)
-    }
-  }
-
-  private var divider: some View {
-    HStack {
-      Rectangle()
-        .fill(Color(.separator))
-        .frame(height: 1)
-
-      Text("or enter code")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-
-      Rectangle()
-        .fill(Color(.separator))
-        .frame(height: 1)
     }
   }
 

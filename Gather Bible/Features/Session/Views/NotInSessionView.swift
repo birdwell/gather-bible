@@ -7,78 +7,57 @@
 
 import SwiftUI
 
-/// View displayed when the user is not in an active session
+/// The Community home when you aren't in a session. Scripture carries the screen,
+/// and the two actions sit where a thumb reaches them.
 struct NotInSessionView: View {
   @ObservedObject var viewModel: SessionViewModel
   @Binding var showingJoinSheet: Bool
   @State private var showingCreateSheet = false
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-  private var isRegularWidth: Bool {
-    horizontalSizeClass == .regular
-  }
 
   var body: some View {
-    VStack(spacing: isRegularWidth ? 32 : 20) {
-      headerSection
-      actionButtons
+    VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 12) {
+        Text("“For where two or three gather in my name, there am I with them.”")
+          .font(AppFont.display)
+          .foregroundStyle(AppColor.ink)
+          .lineSpacing(2)
+          .accessibilityAddTraits(.isHeader)
 
-      if viewModel.isLoading {
-        ProgressView()
+        Text("Matthew 18:20")
+          .font(AppFont.caption)
+          .foregroundStyle(AppColor.muted)
       }
-    }
-    .padding(isRegularWidth ? 40 : 24)
-    .frame(maxWidth: isRegularWidth ? 480 : .infinity)
-  }
+      .padding(.top, 32)
 
-  // MARK: - Header Section
+      Spacer(minLength: 48)
 
-  private var headerSection: some View {
-    VStack(spacing: isRegularWidth ? 12 : 8) {
-      Image(systemName: "person.2.fill")
-        .font(.system(size: isRegularWidth ? 56 : 40))
-        .foregroundStyle(.secondary)
-        .accessibilityHidden(true)
+      Text("Read the same passage together, in sync.")
+        .font(AppFont.body)
+        .foregroundStyle(AppColor.muted)
+        .padding(.bottom, 16)
 
-      Text("Read Together")
-        .font(isRegularWidth ? .title : .title2)
-        .fontWeight(.semibold)
-        .accessibilityAddTraits(.isHeader)
+      VStack(spacing: 8) {
+        Button {
+          showingCreateSheet = true
+        } label: {
+          Text("Start a session")
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.appPrimary)
+        .accessibilityHint("Starts a new reading session")
 
-      Text("Start a session and share the code with others to read the same passage in sync.")
-        .font(isRegularWidth ? .body : .subheadline)
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
-    }
-    .padding(.vertical, isRegularWidth ? 16 : 8)
-  }
-
-  // MARK: - Action Buttons
-
-  private var actionButtons: some View {
-    VStack(spacing: isRegularWidth ? 16 : 12) {
-      Button {
-        showingCreateSheet = true
-      } label: {
-        Label("Create Session", systemImage: "plus.circle.fill")
-          .frame(maxWidth: .infinity)
+        Button {
+          showingJoinSheet = true
+        } label: {
+          Text("Join a session")
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.appSecondary)
+        .accessibilityHint("Joins an existing session with a code")
       }
-      .buttonStyle(.borderedProminent)
-      .controlSize(isRegularWidth ? .large : .regular)
       .disabled(viewModel.isLoading)
-      .accessibilityHint("Starts a new reading session")
-
-      Button {
-        showingJoinSheet = true
-      } label: {
-        Label("Join Session", systemImage: "person.badge.plus")
-          .frame(maxWidth: .infinity)
-      }
-      .buttonStyle(.bordered)
-      .controlSize(isRegularWidth ? .large : .regular)
-      .disabled(viewModel.isLoading)
-      .accessibilityHint("Joins an existing session with a code")
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     .sheet(isPresented: $showingCreateSheet) {
       CreateSessionSheet(viewModel: viewModel, isPresented: $showingCreateSheet)
     }
@@ -86,9 +65,9 @@ struct NotInSessionView: View {
 }
 
 #Preview {
-    NotInSessionView(
-        viewModel: SessionViewModel(),
-        showingJoinSheet: .constant(false)
-    )
-    .padding()
+  NotInSessionView(
+    viewModel: SessionViewModel(),
+    showingJoinSheet: .constant(false)
+  )
+  .padding()
 }

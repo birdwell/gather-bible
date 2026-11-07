@@ -15,6 +15,7 @@ import FirebaseDatabase
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        AppAppearanceSetup.apply()
         SentrySDK.start { options in
             options.dsn = "https://22c49af32701c5e5c0f50867a887bde9@o201915.ingest.us.sentry.io/4510660910055424"
 

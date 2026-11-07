@@ -24,13 +24,13 @@ struct ContentView: View {
 
   var body: some View {
     TabView(selection: $selectedTab) {
-      Tab("Bible", systemImage: "book.fill", value: AppTab.bible) {
+      Tab("Bible", image: AppIcon.book.rawValue, value: AppTab.bible) {
         NavigationStack {
           BibleReader()
         }
       }
 
-      Tab("Community", systemImage: "person.3.fill", value: AppTab.community) {
+      Tab("Community", image: AppIcon.community.rawValue, value: AppTab.community) {
         if horizontalSizeClass == .regular {
           CommunityViewiPad()
         } else {
@@ -41,10 +41,17 @@ struct ContentView: View {
       }
     }
     .tabViewStyle(.sidebarAdaptable)
+    .font(AppFont.body)
+    .tint(AppColor.accent)
     .environmentObject(sessionViewModel)
     .background(WindowAppearanceApplier(style: appearance.interfaceStyle))
     .onOpenURL { url in
       handleDeepLink(url)
+    }
+    .alert("This session has ended", isPresented: $sessionViewModel.sessionEndedByHost) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("The host ended the session. You can keep reading on your own.")
     }
     .alert("This invite link isn't valid.", isPresented: $showInvalidLinkAlert) {
       Button("OK", role: .cancel) {}
