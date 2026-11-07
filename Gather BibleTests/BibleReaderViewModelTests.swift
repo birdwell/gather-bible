@@ -81,6 +81,39 @@ struct BibleReaderViewModelTests {
 
   // MARK: - Next chapter for prefetching
 
+  @Test func testLateBooksForAnOldVersionAreDropped() async {
+    let viewModel = BibleReaderViewModel()
+    viewModel.selectedVersionId = 111
+
+    await viewModel.loadBooksForVersion { _ in
+      viewModel.selectedVersionId = 59
+      return BibleBook.mockBooks
+    }
+
+    #expect(viewModel.selectedVersionBooks.isEmpty)
+  }
+
+  @Test func testLateFailureForAnOldVersionIsIgnored() async {
+    struct LoadFailed: Error {}
+    let viewModel = BibleReaderViewModel()
+    viewModel.selectedVersionId = 111
+
+    await viewModel.loadBooksForVersion { _ in
+      viewModel.selectedVersionId = 59
+      throw LoadFailed()
+    }
+
+    #expect(viewModel.loadErrorMessage == nil)
+  }
+
+  @Test func testBooksForTheCurrentVersionAreApplied() async {
+    let viewModel = BibleReaderViewModel()
+
+    await viewModel.loadBooksForVersion { _ in BibleBook.mockBooks }
+
+    #expect(viewModel.booksLoaded)
+  }
+
   @Test func testNextChapterReferenceWithinBook() {
     let viewModel = BibleReaderViewModel()
     viewModel.selectedVersionBooks = BibleBook.mockBooks

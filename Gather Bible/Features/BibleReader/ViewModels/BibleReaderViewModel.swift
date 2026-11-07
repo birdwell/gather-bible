@@ -25,6 +25,18 @@ final class BibleReaderViewModel {
     availableVersions.first(where: { $0.id == selectedVersionId })
   }
 
+  /// Identifies what's on screen, so views can react when the passage or version changes.
+  var chapterKey: String {
+    "\(selectedBook).\(selectedChapter).\(selectedVersionId)"
+  }
+
+  var selectedBookTitle: String {
+    guard let book = selectedVersionBooks.first(where: { ($0.id ?? "") == selectedBook }) else {
+      return "Loading…"
+    }
+    return book.title ?? "Unknown"
+  }
+
   // MARK: - Data State
   var availableVersions: [BibleVersion] = []
   var selectedVersionBooks: [BibleBook] = []
@@ -305,11 +317,19 @@ final class BibleReaderViewModel {
     }
   }
 
-  func loadBooksForVersion() async {
+  /// Loads the books for the selected version. A result that arrives after the selection has
+  /// moved on is dropped, so it can't replace the books of the version now being read.
+  func loadBooksForVersion(
+    load: (Int) async throws -> [BibleBook]? = {
+      try await YouVersionConfig.getVersionDetails(versionId: $0).books
+    }
+  ) async {
+    let requestedVersionId = selectedVersionId
     do {
-      let version = try await YouVersionConfig.getVersionDetails(versionId: selectedVersionId)
+      let loadedBooks = try await load(requestedVersionId)
+      guard selectedVersionId == requestedVersionId else { return }
 
-      if let books = version.books {
+      if let books = loadedBooks {
         selectedVersionBooks = books
         loadErrorMessage = nil
 
@@ -322,9 +342,17 @@ final class BibleReaderViewModel {
           "We couldn't load this translation. Check your connection and try again."
       }
     } catch {
+      print("📖 [BibleReader] ❌ Error loading books: \(error)")
+      guard selectedVersionId == requestedVersionId else { return }
       loadErrorMessage =
         "We couldn't load this translation. Check your connection and try again."
-      print("📖 [BibleReader] ❌ Error loading books: \(error)")
     }
+  }
+
+  /// Loads the next chapter in the background once this one has had time to appear.
+  func prefetchNextChapter() async {
+    try? await Task.sleep(for: .seconds(1))
+    guard !Task.isCancelled, let next = nextChapterReference else { return }
+    _ = try? await BibleChapterRepository.shared.chapter(withReference: next)
   }
 }

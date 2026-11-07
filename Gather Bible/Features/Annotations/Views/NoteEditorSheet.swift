@@ -12,8 +12,9 @@ struct NoteTarget: Identifiable {
 }
 
 extension NoteTarget {
-  /// The note target for selected verses. Selecting one verse of an existing note edits the
-  /// whole note, so saving doesn't shrink the verses it covers.
+  /// The note target for selected verses, or nil if they have gaps, because a note covers one
+  /// unbroken range. Selecting one verse of an existing note edits the whole note, so saving
+  /// doesn't shrink the verses it covers.
   init?(
     selectedVerses: [Int],
     book: String,
@@ -21,7 +22,9 @@ extension NoteTarget {
     existing: VerseAnnotation?,
     selectionLabel: String
   ) {
-    guard let first = selectedVerses.min(), let last = selectedVerses.max() else { return nil }
+    guard let first = selectedVerses.min(), let last = selectedVerses.max(),
+      last - first + 1 == Set(selectedVerses).count
+    else { return nil }
     let editsExistingNote = first == last && existing?.note != nil
     self.init(
       book: book,
@@ -40,6 +43,7 @@ struct NoteEditorSheet: View {
 
   @Environment(\.dismiss) private var dismiss
   @State private var confirmingDelete = false
+  @State private var saveFailed = false
   @State private var text: String
   @State private var existingNote: String?
   @FocusState private var isFocused: Bool
@@ -65,6 +69,12 @@ struct NoteEditorSheet: View {
           StyledTextEditor(text: $text, placeholder: "What stands out to you?", minHeight: 160)
             .focused($isFocused)
             .accessibilityLabel("Note")
+
+          if saveFailed {
+            Text("Couldn't save. Free up some storage and try again.")
+              .font(AppFont.caption)
+              .foregroundStyle(AppColor.danger)
+          }
 
           Button {
             save(text)
@@ -100,13 +110,14 @@ struct NoteEditorSheet: View {
   }
 
   private func save(_ value: String) {
-    store.setNote(
+    saveFailed = !store.setNote(
       value,
       book: target.book,
       chapter: target.chapter,
       verse: target.verse,
       endVerse: target.endVerse
     )
+    guard !saveFailed else { return }
     onFinish()
     dismiss()
   }

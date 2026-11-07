@@ -59,6 +59,34 @@ struct AnnotationStoreTests {
     #expect(annotation?.noteReference == "Psalm 23:1-3")
   }
 
+  /// A path that can't be written, because its parent folder is really a file.
+  private func unwritableURL() throws -> URL {
+    let file = tempURL()
+    try Data().write(to: file)
+    return file.appending(path: "annotations.json")
+  }
+
+  @Test func testFailedHighlightSaveChangesNothing() throws {
+    let store = AnnotationStore(fileURL: try unwritableURL())
+
+    #expect(store.setHighlight(.honey, book: "JHN", chapter: 3, verses: [16]) == false)
+    #expect(store.annotation(book: "JHN", chapter: 3, verse: 16) == nil)
+  }
+
+  @Test func testFailedNoteSaveChangesNothing() throws {
+    let store = AnnotationStore(fileURL: try unwritableURL())
+
+    #expect(store.setNote("Lost", book: "JHN", chapter: 3, verse: 16) == false)
+    #expect(store.annotation(book: "JHN", chapter: 3, verse: 16) == nil)
+  }
+
+  @Test func testSuccessfulSaveReportsSuccess() {
+    let store = AnnotationStore(fileURL: tempURL())
+
+    #expect(store.setNote("Kept", book: "JHN", chapter: 3, verse: 16))
+    #expect(store.setHighlight(.sky, book: "JHN", chapter: 3, verses: [16]))
+  }
+
   @Test func testCorruptFileStartsEmpty() throws {
     let url = tempURL()
     try Data("not json".utf8).write(to: url)

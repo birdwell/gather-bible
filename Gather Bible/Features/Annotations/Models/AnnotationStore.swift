@@ -14,8 +14,6 @@ final class AnnotationStore {
   static let shared = AnnotationStore(fileURL: AnnotationStore.defaultFileURL)
 
   private(set) var annotations: [String: VerseAnnotation] = [:]
-  /// The last save failure, so a screen can say the change may not last.
-  private(set) var lastSaveFailed = false
 
   private let fileURL: URL
 
@@ -56,21 +54,45 @@ final class AnnotationStore {
   // MARK: - Writing
 
   /// Applies a color to each verse, or removes the highlight when the color is nil.
-  func setHighlight(_ color: HighlightColor?, book: String, chapter: Int, verses: [Int]) {
-    for verse in verses {
-      update(book: book, chapter: chapter, verse: verse) { $0.highlight = color }
+  /// Returns false, with nothing changed, if the change couldn't be saved.
+  @discardableResult
+  func setHighlight(_ color: HighlightColor?, book: String, chapter: Int, verses: [Int]) -> Bool {
+    commit {
+      for verse in verses {
+        update(book: book, chapter: chapter, verse: verse) { $0.highlight = color }
+      }
     }
-    save()
   }
 
   /// Saves a note on the first verse, covering through `endVerse`. Blank text removes it.
-  func setNote(_ text: String, book: String, chapter: Int, verse: Int, endVerse: Int? = nil) {
+  /// Returns false, with nothing changed, if the change couldn't be saved.
+  @discardableResult
+  func setNote(
+    _ text: String,
+    book: String,
+    chapter: Int,
+    verse: Int,
+    endVerse: Int? = nil
+  ) -> Bool {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-    update(book: book, chapter: chapter, verse: verse) {
-      $0.note = trimmed.isEmpty ? nil : trimmed
-      $0.noteEndVerse = trimmed.isEmpty ? nil : endVerse
+    return commit {
+      update(book: book, chapter: chapter, verse: verse) {
+        $0.note = trimmed.isEmpty ? nil : trimmed
+        $0.noteEndVerse = trimmed.isEmpty ? nil : endVerse
+      }
     }
-    save()
+  }
+
+  /// Applies a change and saves it, undoing it if the save fails, so the screen never shows
+  /// something that would vanish on the next launch.
+  private func commit(_ change: () -> Void) -> Bool {
+    let previous = annotations
+    change()
+    guard save() else {
+      annotations = previous
+      return false
+    }
+    return true
   }
 
   private func update(
@@ -97,15 +119,15 @@ final class AnnotationStore {
     annotations = Dictionary(saved.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
   }
 
-  private func save() {
+  private func save() -> Bool {
     do {
       try FileManager.default.createDirectory(
         at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
       let data = try JSONEncoder().encode(Array(annotations.values))
       try data.write(to: fileURL, options: .atomic)
-      lastSaveFailed = false
+      return true
     } catch {
-      lastSaveFailed = true
+      return false
     }
   }
 }

@@ -52,4 +52,13 @@ struct NoteTargetTests {
   @Test func testEmptySelectionHasNoTarget() {
     #expect(target([]) == nil)
   }
+
+  @Test func testSelectionWithGapsHasNoTarget() {
+    #expect(target([16, 18]) == nil)
+  }
+
+  @Test func testUnbrokenSelectionCoversTheRange() {
+    #expect(target([18, 16, 17])?.verse == 16)
+    #expect(target([18, 16, 17])?.endVerse == 18)
+  }
 }
