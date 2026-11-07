@@ -17,6 +17,10 @@ struct YouVersionConfig {
         YouVersionPlatform.configure(appKey: appKey)
     }
     
+    static func makeSearchClient() -> BibleSearchClient {
+        BibleSearchClient(appKey: appKey)
+    }
+
     /// Get available Bible versions
     static func getAvailableVersions(forLanguageTag: String?) async throws -> [BibleVersion] {
         return try await YouVersionAPI.Bible.versions(forLanguageTag: forLanguageTag)
@@ -24,7 +28,8 @@ struct YouVersionConfig {
     
     /// Get version details including books
     static func getVersionDetails(versionId: Int) async throws -> BibleVersion {
-        return try await YouVersionAPI.Bible.version(versionId: versionId)
+        // The repository keeps versions on disk, so later launches skip the network.
+        return try await BibleVersionRepository.shared.version(withId: versionId)
     }
 }
 

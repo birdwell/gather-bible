@@ -209,14 +209,58 @@ final class BibleReaderViewModel {
 
   // MARK: - Data Loading
 
+  // MARK: - Reading Position
+
+  private enum PositionKey {
+    static let book = "reader_position_book"
+    static let chapter = "reader_position_chapter"
+    static let version = "reader_position_version"
+  }
+
+  func restorePosition(from defaults: UserDefaults = .standard) {
+    guard let book = defaults.string(forKey: PositionKey.book) else { return }
+    selectedBook = book
+    selectedChapter = max(1, defaults.integer(forKey: PositionKey.chapter))
+    let version = defaults.integer(forKey: PositionKey.version)
+    if version > 0 { selectedVersionId = version }
+  }
+
+  func savePosition(to defaults: UserDefaults = .standard) {
+    defaults.set(selectedBook, forKey: PositionKey.book)
+    defaults.set(selectedChapter, forKey: PositionKey.chapter)
+    defaults.set(selectedVersionId, forKey: PositionKey.version)
+  }
+
+  /// The chapter people are most likely to open next, including the next book's first.
+  var nextChapterReference: BibleReference? {
+    guard let index = selectedVersionBooks.firstIndex(where: { $0.id == selectedBook }),
+      let chapterCount = selectedVersionBooks[index].chapters?.count
+    else { return nil }
+
+    if selectedChapter < chapterCount {
+      return BibleReference(
+        versionId: selectedVersionId, bookUSFM: selectedBook, chapter: selectedChapter + 1)
+    }
+
+    let nextIndex = selectedVersionBooks.index(after: index)
+    guard selectedVersionBooks.indices.contains(nextIndex),
+      let nextBook = selectedVersionBooks[nextIndex].id
+    else { return nil }
+    return BibleReference(versionId: selectedVersionId, bookUSFM: nextBook, chapter: 1)
+  }
+
   /// Loads available versions. Skips the network fetch if versions were already
   /// loaded (e.g. on a tab switch) unless `force` is true (used by Retry).
   func loadVersions(force: Bool = false) {
     guard force || !hasLoadedVersions else { return }
 
+    // Text only needs the current version's books, so don't make it wait for the full list.
+    if !booksLoaded {
+      Task { await loadBooksForVersion() }
+    }
+
     Task {
       isLoadingVersions = true
-      loadErrorMessage = nil
       do {
         let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "en"
         availableVersions = try await YouVersionConfig.getAvailableVersions(
@@ -235,12 +279,13 @@ final class BibleReaderViewModel {
             selectedVersionId = firstVersion.id
           }
         }
-
-        await loadBooksForVersion()
       } catch {
         isLoadingVersions = false
-        loadErrorMessage =
-          "We couldn't load Bible versions. Check your connection and try again."
+        // Reading still works without the list. Only the version picker needs it.
+        if !booksLoaded {
+          loadErrorMessage =
+            "We couldn't load Bible versions. Check your connection and try again."
+        }
         print("📖 [BibleReader] ❌ Error loading versions: \(error)")
       }
     }

@@ -23,13 +23,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             // For more information, visit: https://docs.sentry.io/platforms/apple/data-management/data-collected/
             options.sendDefaultPii = true
 
-            // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-            // We recommend adjusting this value in production.
-            options.tracesSampleRate = 1.0
+            // Sample 10% of sessions: full tracing and profiling add work to every launch.
+                        options.tracesSampleRate = 0.1
 
             // Configure profiling. Visit https://docs.sentry.io/platforms/apple/profiling/ to learn more.
             options.configureProfiling = {
-                $0.sessionSampleRate = 1.0 // We recommend adjusting this value in production.
+                $0.sessionSampleRate = 0.1
                 $0.lifecycle = .trace
             }
 

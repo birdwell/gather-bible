@@ -21,6 +21,8 @@ enum AppColor {
   static let accent = dynamic(light: 0x2E6A50, dark: 0x5FAF8A)
   /// Content on an `accent` fill.
   static let onAccent = dynamic(light: 0xFFFFFF, dark: 0x171613)
+  /// Marks on a highlight swatch, which stays mid-tone in both modes.
+  static let onHighlight = dynamic(light: 0x25231E, dark: 0x171613)
   /// Errors and destructive actions.
   static let danger = dynamic(light: 0xA63A2E, dark: 0xE8907F)
   /// Words of Christ in Scripture text. Not used for any other purpose.
