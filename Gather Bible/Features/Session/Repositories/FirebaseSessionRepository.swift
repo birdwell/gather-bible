@@ -125,6 +125,28 @@ final class FirebaseSessionRepository: SessionRepository {
     initialBook: String,
     initialChapter: Int
   ) async throws {
+    let sessionData = Self.sessionCreationUpdate(
+      sessionId: sessionId,
+      userId: userId,
+      joinCode: joinCode,
+      hostDisplayName: hostDisplayName,
+      initialBook: initialBook,
+      initialChapter: initialChapter
+    )
+
+    try await db.updateChildValues(sessionData)
+  }
+
+  /// The root-level update that creates a session. The key must be the session's own
+  /// path: writing a `sessions` key here would replace every other session.
+  static func sessionCreationUpdate(
+    sessionId: String,
+    userId: String,
+    joinCode: String,
+    hostDisplayName: String,
+    initialBook: String,
+    initialChapter: Int
+  ) -> [String: Any] {
     let initialState: [String: Any] = [
       "joinCode": joinCode,
       "hostId": userId,
@@ -138,23 +160,19 @@ final class FirebaseSessionRepository: SessionRepository {
       "active": true,
     ]
 
-    let sessionData: [String: Any] = [
-      "sessions": [
-        sessionId: [
-          "state": initialState,
-          "participants": [
-            userId: [
-              "displayName": hostDisplayName,
-              "isHost": true,
-              "active": true,
-              "lastSeen": ServerValue.timestamp(),
-            ]
-          ],
-        ]
+    return [
+      "sessions/\(sessionId)": [
+        "state": initialState,
+        "participants": [
+          userId: [
+            "displayName": hostDisplayName,
+            "isHost": true,
+            "active": true,
+            "lastSeen": ServerValue.timestamp(),
+          ]
+        ],
       ]
     ]
-
-    try await db.updateChildValues(sessionData)
   }
 
   func joinSession(
