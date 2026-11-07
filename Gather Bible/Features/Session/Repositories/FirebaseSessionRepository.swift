@@ -177,8 +177,10 @@ final class FirebaseSessionRepository: SessionRepository {
       try await db.child("sessions").child(sessionId).child("participants").child(userId)
         .removeValue()
     } else {
-      try await db.child("sessions").child(sessionId).child("state").child("active")
-        .setValue(false)
+      // `endedAt` tells guests this was deliberate. A dropped host connection
+      // only clears `active`, so guests can stay and claim host.
+      try await db.child("sessions").child(sessionId).child("state")
+        .updateChildValues(["active": false, "endedAt": ServerValue.timestamp()])
     }
   }
 

@@ -21,6 +21,8 @@ class SessionViewModel: ObservableObject {
   // MARK: - Session State
 
   @Published var isInSession = false
+  /// True after the host ends the session you're in, until you've seen the notice.
+  @Published var sessionEndedByHost = false
   @Published var isHost = false
   @Published var joinCode = ""
   @Published private(set) var sessionId: String?
@@ -141,7 +143,7 @@ class SessionViewModel: ObservableObject {
     repository.currentStatePublisher
       .receive(on: DispatchQueue.main)
       .sink { [weak self] state in
-        self?.currentState = state
+        self?.handleStateUpdate(state)
       }
       .store(in: &cancellables)
 
@@ -287,6 +289,16 @@ class SessionViewModel: ObservableObject {
     resetSessionState()
 
     isLoading = false
+  }
+
+  private func handleStateUpdate(_ state: SessionState?) {
+    currentState = state
+
+    if state?.endedAt != nil, isInSession, !isHost {
+      repository.stopListening()
+      resetSessionState()
+      sessionEndedByHost = true
+    }
   }
 
   private func resetSessionState() {
