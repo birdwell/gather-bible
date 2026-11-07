@@ -27,6 +27,12 @@ test("a deliberately ended session can't be claimed", () => {
   assert.strictEqual(applyHostClaim(ended, "guest", "Sam"), undefined);
 });
 
+test("an older app's ended session can't be reopened", () => {
+  const ended = session();
+  ended.participants.host.active = true;
+  assert.strictEqual(applyHostClaim(ended, "guest", "Sam"), undefined);
+});
+
 test("someone outside the session can't claim it", () => {
   assert.strictEqual(applyHostClaim(session(), "stranger", "Eve"), undefined);
 });

@@ -1,9 +1,10 @@
+const {isSessionEnded} = require("./sessionRules");
+
 /**
  * Transaction update for a guest taking over a session as host.
  *
- * A host whose connection dropped leaves `active` false with no `endedAt`, and
- * that's when a guest can take over. A host who ended the session sets
- * `endedAt`, and that session stays closed.
+ * A guest can take over from a host whose connection dropped. A session the
+ * host deliberately ended stays closed.
  *
  * @param {object|null} current Session data, or null on the first pass.
  * @param {string} userId The claiming user.
@@ -16,7 +17,7 @@ function applyHostClaim(current, userId, displayName) {
   // every claim, so hand it back and the server re-runs with the real data.
   if (current === null) return null;
 
-  if (!current.state || current.state.endedAt) return undefined;
+  if (!current.state || isSessionEnded(current)) return undefined;
   if (!current.participants?.[userId]) return undefined;
   if (current.state.hostId === userId) return current;
 

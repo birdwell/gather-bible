@@ -3,7 +3,7 @@
   "description": "Cloud Functions for Firebase for Gather Bible app",
   "scripts": {
     "lint": "eslint .",
-    "test": "node --test hostClaim.test.js",
+    "test": "node --test hostClaim.test.js sessionRules.test.js",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",

@@ -99,7 +99,8 @@ final class FirebaseSessionRepository: SessionRepository {
       }
 
       if status == "NOT_FOUND" {
-        throw SessionRepositoryError.sessionNotFound
+        throw data["reason"] as? String == "ENDED"
+          ? SessionRepositoryError.sessionEnded : SessionRepositoryError.sessionNotFound
       }
 
       guard let sessionId = data["sessionId"] as? String else {
@@ -173,14 +174,46 @@ final class FirebaseSessionRepository: SessionRepository {
   }
 
   func leaveSession(sessionId: String, userId: String, isHost: Bool) async throws {
-    if !isHost {
-      try await db.child("sessions").child(sessionId).child("participants").child(userId)
-        .removeValue()
-    } else {
-      // `endedAt` tells guests this was deliberate. A dropped host connection
-      // only clears `active`, so guests can stay and claim host.
-      try await db.child("sessions").child(sessionId).child("state")
-        .updateChildValues(["active": false, "endedAt": ServerValue.timestamp()])
+    if isHost, try await endSessionIfStillHost(sessionId: sessionId, userId: userId) {
+      return
+    }
+
+    let participantRef = db.child("sessions").child(sessionId).child("participants").child(userId)
+    // Otherwise a later disconnect writes `active` back into the removed record.
+    try await participantRef.cancelDisconnectOperations()
+    try await participantRef.removeValue()
+  }
+
+  /// Ends the session only if the server still lists this user as host, so a former
+  /// host with stale state can't end a session someone else took over.
+  private func endSessionIfStillHost(sessionId: String, userId: String) async throws -> Bool {
+    let stateRef = db.child("sessions").child(sessionId).child("state")
+
+    return try await withCheckedThrowingContinuation { continuation in
+      stateRef.runTransactionBlock(
+        { @Sendable data in
+          // The first pass can see an empty cache. Passing it on makes the server
+          // re-run this with the real data.
+          guard var state = data.value as? [String: Any] else {
+            return .success(withValue: data)
+          }
+          guard state["hostId"] as? String == userId else { return .abort() }
+
+          // `endedAt` tells guests this was deliberate. A dropped host connection
+          // only clears `active`, so guests can stay and claim host.
+          state["active"] = false
+          state["endedAt"] = ServerValue.timestamp()
+          data.value = state
+          return .success(withValue: data)
+        },
+        andCompletionBlock: { @Sendable error, committed, _ in
+          if let error {
+            continuation.resume(throwing: error)
+          } else {
+            continuation.resume(returning: committed)
+          }
+        }
+      )
     }
   }
 
@@ -460,12 +493,14 @@ final class FirebaseSessionRepository: SessionRepository {
 enum SessionRepositoryError: LocalizedError {
   case invalidResponse
   case sessionNotFound
+  case sessionEnded
   case claimHostFailed
 
   var errorDescription: String? {
     switch self {
     case .invalidResponse: return "Invalid response from server."
     case .sessionNotFound: return "Session not found."
+    case .sessionEnded: return "This session has ended. Ask the host to start a new one."
     case .claimHostFailed: return "Failed to claim host role."
     }
   }

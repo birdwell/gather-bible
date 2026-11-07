@@ -2,6 +2,7 @@ const {onCall} = require("firebase-functions/v2/https");
 const {initializeApp} = require("firebase-admin/app");
 const {getDatabase} = require("firebase-admin/database");
 const {applyHostClaim, didClaimSucceed} = require("./hostClaim");
+const {findSessionByJoinCode} = require("./sessionRules");
 
 initializeApp();
 const db = getDatabase();
@@ -49,13 +50,7 @@ exports.lookupJoinCode = onCall({cors: true}, async (request) => {
   const code = joinCode.toUpperCase();
   const sessions = (await db.ref("sessions").once("value")).val() || {};
 
-  for (const [sessionId, data] of Object.entries(sessions)) {
-    if (data?.state?.joinCode === code) {
-      return {sessionId, status: "FOUND"};
-    }
-  }
-
-  return {status: "NOT_FOUND"};
+  return findSessionByJoinCode(sessions, code);
 });
 
 /**

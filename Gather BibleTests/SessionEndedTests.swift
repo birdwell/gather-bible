@@ -6,10 +6,14 @@ import Testing
 @MainActor
 struct SessionEndedTests {
 
-  private func state(active: Bool = true, endedAt: Double? = nil) -> SessionState {
+  private func state(
+    active: Bool = true,
+    endedAt: Double? = nil,
+    hostId: String = "host"
+  ) -> SessionState {
     var dictionary: [String: Any] = [
       "joinCode": "ABC123",
-      "hostId": "host",
+      "hostId": hostId,
       "book": "GEN",
       "chapter": 1,
       "startVerseId": "GEN.1.1",
@@ -60,10 +64,61 @@ struct SessionEndedTests {
     let viewModel = SessionViewModel(repository: repository)
     await viewModel.createSession()
 
-    repository.simulateStateUpdate(state(active: false, endedAt: 1000))
+    repository.simulateStateUpdate(
+      state(active: false, endedAt: 1000, hostId: viewModel.userId))
     await settle()
 
     #expect(viewModel.sessionEndedByHost == false)
+  }
+
+  @Test func testGuestRemovesOwnRecordWhenSessionEnds() async {
+    let (viewModel, repository) = await joinedGuest()
+    repository.leaveSessionCalled = false
+
+    repository.simulateStateUpdate(state(active: false, endedAt: 1000))
+    await settle()
+
+    #expect(viewModel.isInSession == false)
+    #expect(repository.leaveSessionCalled == true)
+    #expect(repository.lastLeaveIsHost == false)
+  }
+
+  @Test func testFormerHostStepsDownAfterTakeover() async {
+    let repository = MockSessionRepository()
+    let viewModel = SessionViewModel(repository: repository)
+    await viewModel.createSession()
+    #expect(viewModel.isHost == true)
+
+    repository.simulateStateUpdate(state(hostId: "someone-else"))
+    await settle()
+
+    #expect(viewModel.isInSession == true)
+    #expect(viewModel.isHost == false)
+  }
+
+  @Test func testServerStateRestoresHostAfterStaleUpdate() async {
+    let repository = MockSessionRepository()
+    let viewModel = SessionViewModel(repository: repository)
+    await viewModel.createSession()
+
+    repository.simulateStateUpdate(state(hostId: "someone-else"))
+    await settle()
+    repository.simulateStateUpdate(state(hostId: viewModel.userId))
+    await settle()
+
+    #expect(viewModel.isHost == true)
+  }
+
+  @Test func testFormerHostGetsNoticeWhenNewHostEnds() async {
+    let repository = MockSessionRepository()
+    let viewModel = SessionViewModel(repository: repository)
+    await viewModel.createSession()
+
+    repository.simulateStateUpdate(state(active: false, endedAt: 1000, hostId: "someone-else"))
+    await settle()
+
+    #expect(viewModel.isInSession == false)
+    #expect(viewModel.sessionEndedByHost == true)
   }
 
   @Test func testStateParsesEndedAt() {

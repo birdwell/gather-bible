@@ -294,10 +294,31 @@ class SessionViewModel: ObservableObject {
   private func handleStateUpdate(_ state: SessionState?) {
     currentState = state
 
-    if state?.endedAt != nil, isInSession, !isHost {
-      repository.stopListening()
-      resetSessionState()
-      sessionEndedByHost = true
+    guard isInSession, let state else { return }
+
+    // The server decides who hosts. A host who lost connection and reconnects
+    // after a takeover must stop acting as host.
+    isHost = state.hostId == userId
+
+    if state.endedAt != nil, !isHost {
+      exitEndedSession()
+    }
+  }
+
+  private func exitEndedSession() {
+    let endedSessionId = sessionId
+    repository.stopListening()
+    resetSessionState()
+    sessionEndedByHost = true
+
+    guard let endedSessionId else { return }
+    // Cleanup only. A failure here, such as being offline, shouldn't hold up leaving.
+    Task { [repository, userId] in
+      try? await repository.leaveSession(
+        sessionId: endedSessionId,
+        userId: userId,
+        isHost: false
+      )
     }
   }
 
