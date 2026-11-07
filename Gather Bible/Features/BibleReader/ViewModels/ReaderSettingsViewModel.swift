@@ -70,7 +70,8 @@ final class ReaderSettingsViewModel {
     BibleTextOptions(
       fontFamily: fontFamily,
       fontSize: size,
-      lineSpacing: size * 0.6,
+      // The SDK multiplies this by the font size.
+      lineSpacing: 0.6,
       paragraphSpacing: size * 0.5,
       textColor: AppColor.ink,
       wocColor: AppColor.wordsOfChrist

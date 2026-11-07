@@ -6,6 +6,7 @@ colors:
   muted: { light: "#6A665B", dark: "#A9A496" }
   accent: { light: "#2E6A50", dark: "#5FAF8A" }
   on-accent: { light: "#FFFFFF", dark: "#171613" }
+  onHighlight: { light: "#25231E", dark: "#171613" }
   danger: { light: "#A63A2E", dark: "#E8907F" }
   words-of-christ: { light: "#A63A2E", dark: "#E8907F" }
 typography:
@@ -42,6 +43,7 @@ Code: `Core/Design/AppColor.swift`, `AppFont.swift`, and `AppPrimaryButtonStyle.
 | muted | Supporting text and quiet icons |
 | accent | Actions, selection, and focus only. Keep it under 5% of a screen |
 | on-accent | Content on an accent fill |
+| onHighlight | Marks on a highlight swatch |
 | danger | Errors and destructive actions, always with an icon or words |
 | words-of-christ | Red-letter Scripture only |
 
@@ -49,6 +51,9 @@ Every pair above passes 4.5:1 in light and dark. Muted on surface is the tightes
 4.55:1 in light.
 
 `AccentColor` in the asset catalog must match the accent role.
+
+Highlight colors (`HighlightColor`: honey, sage, sky) are the one exception to one accent. They are
+marks people make on Scripture, not interface color, and appear only on verses and their swatches.
 
 ## Typography
 
@@ -84,6 +89,9 @@ Controls use a radius of 8. Primary buttons use 12.
 - **ChapterOpener**: the large chapter number, with who you're reading with beside it. The YouVersion
   SDK draws the verses, so a true wrapped drop cap isn't possible without replacing its renderer.
 - **ChapterFooter**: chapter navigation at the end of the text.
+- **VerseActionBar**: floats above the tab bar while verses are selected, for highlight, note, and
+  copy. It's the one element allowed there, because it's temporary and floats over the text.
+- **ChapterNotesSection** and **NoteRow**: notes, in the column under the text they belong to.
 
 Scripture runs edge to edge and scrolls under the tab bar. Never put a solid bar above the tab bar.
 
@@ -102,11 +110,18 @@ Scripture runs edge to edge and scrolls under the tab bar. Never put a solid bar
 
 ## Responsive behavior
 
-The reader's text column stops at 720pt on iPad, with wider side margins.
+The reader sets its margins from the available width, not the device: a 680pt column on anything
+wide, 16pt margins on anything narrow. That covers phones, iPad windows, and foldables.
+
+Reader controls are system toolbar items, so iPhone Duo can move them to the side. Give a toolbar item
+an icon and a title, or iOS keeps it on top. Custom floating controls use `avoidingFold()` to stay out
+of the fold. Scrolling text doesn't need to, per Apple's guidance. Keep the top row to a few items, or
+iOS hides the rest in a menu beside a top tab bar.
 
 ## Known gaps
 
 - The tab bar shape, system alerts, and navigation controls such as Done are still system-drawn.
 - The AirPlay icon comes from AVRoutePickerView and can't use the Phosphor set.
+- The text size icon is the SF Symbol `textformat.size`. It needs a Phosphor asset.
 - The picker's selected segment is the system white, not a token.
 - ExternalDisplay's TV view keeps its own always-dark look.

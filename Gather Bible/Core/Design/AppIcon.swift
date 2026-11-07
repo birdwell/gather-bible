@@ -23,6 +23,9 @@ enum AppIcon: String {
   case trash = "icon-trash"
   case send = "icon-paper-plane-tilt"
   case offline = "icon-wifi-slash"
+  case search = "icon-magnifying-glass"
+  case note = "icon-note-pencil"
+  case close = "icon-x"
 }
 
 /// An icon that inherits the current color and scales with Dynamic Type.

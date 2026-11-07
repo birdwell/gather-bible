@@ -40,7 +40,7 @@ struct ContentView: View {
         }
       }
     }
-    .tabViewStyle(.sidebarAdaptable)
+    .tabViewStyle(.tabBarOnly)
     .font(AppFont.body)
     .tint(AppColor.accent)
     .environmentObject(sessionViewModel)
