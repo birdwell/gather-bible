@@ -15,6 +15,7 @@ struct ReaderSettingsSheet: View {
         Spacer()
           .frame(height: 8)
 
+        AppearancePicker()
         previewSection
         fontSizeSection
         fontFamilySection

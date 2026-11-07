@@ -8,7 +8,7 @@ struct ReaderMenu: View {
       Button {
         showTextSettings = true
       } label: {
-        Label("Text Settings", systemImage: "textformat.size")
+        Label("Reader Settings", systemImage: "textformat.size")
       }
     } label: {
       Image(systemName: "ellipsis.circle")
@@ -17,7 +17,7 @@ struct ReaderMenu: View {
     }
     .modifier(GlassButtonModifier())
     .accessibilityLabel("Reader options")
-    .accessibilityHint("Adjusts text size and font")
+    .accessibilityHint("Adjusts appearance, text size, and font")
     .sheet(isPresented: $showTextSettings) {
       ReaderSettingsSheet()
     }

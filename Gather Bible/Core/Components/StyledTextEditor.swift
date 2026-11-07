@@ -13,7 +13,7 @@ struct StyledTextEditor: View {
 
   /// Scales the caller-supplied minimum height with Dynamic Type so the editor
   /// grows alongside the text it contains. The passed value is the base.
-  @ScaledMetric(relativeTo: .body) private var minHeight: CGFloat
+  @ScaledMetric private var minHeight: CGFloat
 
   init(text: Binding<String>, minHeight: CGFloat = 100) {
     self._text = text

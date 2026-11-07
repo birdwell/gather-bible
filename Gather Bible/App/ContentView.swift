@@ -20,6 +20,7 @@ struct ContentView: View {
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @State private var selectedTab: AppTab = .bible
   @State private var showInvalidLinkAlert = false
+  @AppStorage(AppAppearance.storageKey) private var appearance: AppAppearance = .system
 
   var body: some View {
     TabView(selection: $selectedTab) {
@@ -41,6 +42,7 @@ struct ContentView: View {
     }
     .tabViewStyle(.sidebarAdaptable)
     .environmentObject(sessionViewModel)
+    .background(WindowAppearanceApplier(style: appearance.interfaceStyle))
     .onOpenURL { url in
       handleDeepLink(url)
     }
