@@ -10,11 +10,10 @@ import SwiftUI
 /// A button that copies a code string to clipboard with animated feedback
 struct CopyableCodeButton: View {
   let code: String
-  var iconFont: Font = .title2
+  var iconSize: CGFloat = 20
 
   @State private var copied = false
   @State private var resetTask: Task<Void, Never>?
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     Button {
@@ -33,32 +32,17 @@ struct CopyableCodeButton: View {
         copied = false
       }
     } label: {
-      Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
-        .font(iconFont)
-        .foregroundStyle(copied ? .green : .accentColor)
-        .modifier(CopyIconTransition(enabled: !reduceMotion))
+      AppIconView(copied ? .check : .copy, size: iconSize)
+        .foregroundStyle(AppColor.ink)
         .frame(minWidth: 44, minHeight: 44)
     }
-    .buttonStyle(.borderless)
+    .buttonStyle(.plain)
     .accessibilityLabel("Copy code")
     .modifier(CopiedAccessibilityValue(copied: copied))
     .accessibilityHint("Copies the code to the clipboard")
     .onDisappear {
       resetTask?.cancel()
       resetTask = nil
-    }
-  }
-}
-
-/// Applies the symbol-replace transition only when Reduce Motion is off.
-private struct CopyIconTransition: ViewModifier {
-  let enabled: Bool
-
-  func body(content: Content) -> some View {
-    if enabled {
-      content.contentTransition(.symbolEffect(.replace))
-    } else {
-      content
     }
   }
 }
@@ -80,13 +64,13 @@ private struct CopiedAccessibilityValue: ViewModifier {
   VStack(spacing: 20) {
     HStack {
       Text("ABC123")
-        .font(.system(.largeTitle, design: .monospaced, weight: .bold))
+        .font(AppFont.display)
       CopyableCodeButton(code: "ABC123")
     }
 
     HStack {
       Text("XYZ789")
-      CopyableCodeButton(code: "XYZ789", iconFont: .body)
+      CopyableCodeButton(code: "XYZ789", iconSize: 16)
     }
   }
   .padding()

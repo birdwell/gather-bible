@@ -13,42 +13,49 @@ struct CreateSessionSheet: View {
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 24) {
-        FormField(label: "Your Name", helper: "This is how others will see you in nearby sessions") {
-          TextField("Enter your name", text: $hostNameInput)
+      VStack(alignment: .leading, spacing: 24) {
+        FormField(label: "Your name") {
+          TextField("How others will see you", text: $hostNameInput)
             .focused($isNameFieldFocused)
             .textContentType(.name)
             .textInputAutocapitalization(.words)
-            .submitLabel(.done)
+            .submitLabel(.go)
             .onSubmit { attemptCreate() }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .appField()
         }
 
         if let error = viewModel.errorMessage {
-          errorMessage(error)
+          InlineError(message: error)
         }
+
+        Button {
+          attemptCreate()
+        } label: {
+          Group {
+            if viewModel.isLoading {
+              ProgressView()
+            } else {
+              Text("Start session")
+            }
+          }
+          .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.appPrimary)
+        .disabled(trimmedName.isEmpty || viewModel.isLoading)
+
+        Spacer(minLength: 0)
       }
-      .padding()
-      .navigationTitle("Create Session")
-      .navigationBarTitleDisplayMode(.inline)
+      .padding(16)
+      .appNavigationTitle("Start a session")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") { dismiss() }
-        }
-        ToolbarItem(placement: .confirmationAction) {
-          if viewModel.isLoading {
-            ProgressView()
-          } else {
-            Button("Create") { attemptCreate() }
-              .disabled(trimmedName.isEmpty)
-          }
         }
       }
     }
     .presentationDetents([.medium])
     .presentationDragIndicator(.visible)
+    .appSheet()
     .onAppear {
       viewModel.errorMessage = nil
       viewModel.isInlineErrorSheetPresented = true
@@ -68,20 +75,6 @@ struct CreateSessionSheet: View {
         dismiss()
       }
     }
-  }
-
-  private func errorMessage(_ error: String) -> some View {
-    HStack {
-      Image(systemName: "exclamationmark.triangle.fill")
-        .accessibilityHidden(true)
-      Text(error)
-    }
-    .font(.subheadline)
-    .foregroundStyle(.red)
-    .padding()
-    .frame(maxWidth: .infinity)
-    .background(Color.red.opacity(0.1))
-    .clipShape(RoundedRectangle(cornerRadius: 8))
   }
 
   private func dismiss() {

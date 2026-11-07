@@ -2,7 +2,7 @@
 //  DiscussionPromptSheet.swift
 //  Gather Bible
 //
-//  Half-sheet for guests to respond to a discussion question
+//  Sheet for guests to respond to a discussion question
 //
 
 import SwiftUI
@@ -13,6 +13,7 @@ struct DiscussionPromptSheet: View {
   @Environment(\.dismiss) private var dismiss
 
   @State private var responseText = ""
+  @FocusState private var isResponseFocused: Bool
 
   private var trimmedResponse: String {
     responseText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -20,22 +21,47 @@ struct DiscussionPromptSheet: View {
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 24) {
-        if let discussion = viewModel.activeDiscussion {
-          QuestionHeader(question: discussion.question)
+      ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+          if let discussion = viewModel.activeDiscussion {
+            Text(discussion.question)
+              .font(AppFont.display)
+              .foregroundStyle(AppColor.ink)
+              .fixedSize(horizontal: false, vertical: true)
+              .accessibilityAddTraits(.isHeader)
+          }
+
+          StyledTextEditor(text: $responseText, placeholder: "Your response", minHeight: 120)
+            .focused($isResponseFocused)
+            .accessibilityLabel("Your response")
+
+          if let error = viewModel.errorMessage {
+            InlineError(message: error)
+          }
+
+          Button {
+            Task {
+              await viewModel.submitDiscussionResponse(response: trimmedResponse)
+              if viewModel.errorMessage == nil {
+                dismiss()
+              }
+            }
+          } label: {
+            Group {
+              if viewModel.isLoading {
+                ProgressView()
+              } else {
+                Text("Share response")
+              }
+            }
+            .frame(maxWidth: .infinity)
+          }
+          .buttonStyle(.appPrimary)
+          .disabled(trimmedResponse.isEmpty || viewModel.isLoading)
         }
-
-        FormField(label: "Your Response") {
-          StyledTextEditor(text: $responseText, minHeight: 120)
-        }
-
-        errorMessage
-
-        Spacer()
+        .padding(16)
       }
-      .padding()
-      .navigationTitle("Discussion")
-      .navigationBarTitleDisplayMode(.inline)
+      .appNavigationTitle("Discussion")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Skip") {
@@ -44,72 +70,20 @@ struct DiscussionPromptSheet: View {
             dismiss()
           }
         }
-        ToolbarItem(placement: .confirmationAction) {
-          if viewModel.isLoading {
-            ProgressView()
-          } else {
-            Button("Submit") {
-              Task {
-                await viewModel.submitDiscussionResponse(response: trimmedResponse)
-                if viewModel.errorMessage == nil {
-                  dismiss()
-                }
-              }
-            }
-            .disabled(trimmedResponse.isEmpty)
-          }
-        }
       }
     }
-    .presentationDetents([.medium, .large])
+    .presentationDetents([.large])
     .interactiveDismissDisabled(!trimmedResponse.isEmpty)
+    .appSheet()
     .onAppear {
       viewModel.errorMessage = nil
       viewModel.isInlineErrorSheetPresented = true
+      isResponseFocused = true
     }
     .onDisappear {
       viewModel.isInlineErrorSheetPresented = false
       viewModel.errorMessage = nil
     }
-  }
-
-  @ViewBuilder
-  private var errorMessage: some View {
-    if let error = viewModel.errorMessage {
-      HStack {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .accessibilityHidden(true)
-        Text(error)
-      }
-      .font(.subheadline)
-      .foregroundStyle(.red)
-      .padding()
-      .frame(maxWidth: .infinity)
-      .background(Color.red.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 8))
-      .accessibilityElement(children: .combine)
-      .accessibilityLabel("Error: \(error)")
-      .accessibilityAddTraits(.isStaticText)
-    }
-  }
-}
-
-private struct QuestionHeader: View {
-  let question: String
-
-  var body: some View {
-    VStack(spacing: 12) {
-      Image(systemName: "bubble.left.and.bubble.right.fill")
-        .font(.system(size: 32))
-        .foregroundStyle(.blue)
-
-      Text(question)
-        .font(.title3)
-        .fontWeight(.medium)
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    .padding(.vertical, 8)
   }
 }
 

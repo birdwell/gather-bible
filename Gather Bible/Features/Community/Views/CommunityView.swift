@@ -1,25 +1,25 @@
-
-
 import SwiftUI
 
 struct CommunityView: View {
   @EnvironmentObject var sessionViewModel: SessionViewModel
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 16) {
+    GeometryReader { proxy in
+      ScrollView {
         SessionManagementView(viewModel: sessionViewModel)
+          .padding(16)
+          .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .top)
       }
-      .padding(16)
-      .frame(maxWidth: .infinity)
     }
+    .background(AppColor.ground.ignoresSafeArea())
     .navigationTitle("Community")
+    .toolbar(.hidden, for: .navigationBar)
   }
 }
 
 #Preview {
-    NavigationStack {
-        CommunityView()
-            .environmentObject(SessionViewModel())
-    }
+  NavigationStack {
+    CommunityView()
+      .environmentObject(SessionViewModel())
+  }
 }

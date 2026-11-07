@@ -13,36 +13,56 @@ struct CreateDiscussionSheet: View {
   @Environment(\.dismiss) private var dismiss
 
   @State private var questionText = ""
-  @State private var publishImmediately = true
+  @FocusState private var isQuestionFocused: Bool
 
   private var trimmedQuestion: String {
     questionText.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
+  private var canSubmit: Bool {
+    !trimmedQuestion.isEmpty && !viewModel.isLoading
+  }
+
   var body: some View {
     NavigationStack {
-      VStack(spacing: 24) {
-        FormField(label: "Question", helper: "Ask a question for your group to discuss") {
-          StyledTextEditor(text: $questionText, minHeight: 100)
-        }
-
-        VStack(alignment: .leading, spacing: 8) {
-          Toggle("Send immediately", isOn: $publishImmediately)
-            .accessibilityHint("Determines whether the discussion is sent now or saved as a draft")
-          Text(
-            publishImmediately
-              ? "Guests will receive the prompt right away" : "Save as draft to send later"
+      ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+          StyledTextEditor(
+            text: $questionText,
+            placeholder: "What stood out to you?",
+            minHeight: 120
           )
-          .font(.caption)
-          .foregroundStyle(.secondary)
+          .focused($isQuestionFocused)
+          .accessibilityLabel("Question")
+
+          if let error = viewModel.errorMessage {
+            InlineError(message: error)
+          }
+
+          VStack(spacing: 8) {
+            Button {
+              submit(publishImmediately: true)
+            } label: {
+              Text("Send to group")
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.appPrimary)
+            .disabled(!canSubmit)
+            .disabled(viewModel.activeDiscussion != nil)
+
+            Button {
+              submit(publishImmediately: false)
+            } label: {
+              Text("Save as draft")
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.appSecondary)
+            .disabled(!canSubmit)
+          }
         }
-
-        errorMessage
-
+        .padding(16)
       }
-      .padding()
-      .navigationTitle("Create Discussion")
-      .navigationBarTitleDisplayMode(.inline)
+      .appNavigationTitle("Ask a question")
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") {
@@ -50,29 +70,15 @@ struct CreateDiscussionSheet: View {
             dismiss()
           }
         }
-        ToolbarItem(placement: .confirmationAction) {
-          if viewModel.isLoading {
-            ProgressView()
-          } else {
-            Button(publishImmediately ? "Send" : "Save") {
-              Task {
-                await viewModel.createDiscussion(
-                  question: trimmedQuestion, publishImmediately: publishImmediately)
-                if viewModel.errorMessage == nil {
-                  dismiss()
-                }
-              }
-            }
-            .disabled(trimmedQuestion.isEmpty)
-          }
-        }
       }
     }
-    .presentationDetents([.medium, .large])
+    .presentationDetents([.large])
     .presentationDragIndicator(.visible)
+    .appSheet()
     .onAppear {
       viewModel.errorMessage = nil
       viewModel.isInlineErrorSheetPresented = true
+      isQuestionFocused = true
     }
     .onDisappear {
       viewModel.isInlineErrorSheetPresented = false
@@ -80,23 +86,15 @@ struct CreateDiscussionSheet: View {
     }
   }
 
-  @ViewBuilder
-  private var errorMessage: some View {
-    if let error = viewModel.errorMessage {
-      HStack {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .accessibilityHidden(true)
-        Text(error)
+  private func submit(publishImmediately: Bool) {
+    Task {
+      await viewModel.createDiscussion(
+        question: trimmedQuestion,
+        publishImmediately: publishImmediately
+      )
+      if viewModel.errorMessage == nil {
+        dismiss()
       }
-      .font(.subheadline)
-      .foregroundStyle(.red)
-      .padding()
-      .frame(maxWidth: .infinity)
-      .background(Color.red.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 8))
-      .accessibilityElement(children: .combine)
-      .accessibilityLabel("Error: \(error)")
-      .accessibilityAddTraits(.isStaticText)
     }
   }
 }

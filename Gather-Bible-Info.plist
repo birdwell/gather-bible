@@ -20,5 +20,10 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Gather Bible looks for Bible study sessions on your Wi-Fi network so you can join a nearby group without typing a code.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Newsreader.ttf</string>
+		<string>Newsreader-Italic.ttf</string>
+	</array>
 </dict>
 </plist>

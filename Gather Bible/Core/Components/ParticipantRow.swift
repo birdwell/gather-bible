@@ -13,27 +13,17 @@ struct ParticipantRow: View {
   var isCurrentUser: Bool = false
   var showActiveIndicator: Bool = true
 
-  @ScaledMetric(relativeTo: .body) private var dotSize: CGFloat = 10
-
   var body: some View {
     HStack {
-      if showActiveIndicator {
-        Circle()
-          .fill(participant.active ? Color.green : Color.secondary)
-          .frame(width: dotSize, height: dotSize)
-          .accessibilityHidden(true)
-      }
-
       VStack(alignment: .leading, spacing: 4) {
         HStack {
           Text(participant.displayName)
-            .font(.headline)
+            .font(AppFont.label)
 
           if participant.isHost {
-            Image(systemName: "crown.fill")
-              .font(.caption)
-              .foregroundStyle(.orange)
-              .accessibilityHidden(true)
+            Text("Host")
+              .font(AppFont.caption)
+              .foregroundStyle(AppColor.muted)
           }
         }
 
@@ -41,8 +31,8 @@ struct ParticipantRow: View {
         // status is never conveyed by the colored dot alone.
         if !participant.active {
           Text("Inactive")
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(AppFont.caption)
+            .foregroundStyle(AppColor.muted)
         }
       }
 
@@ -50,8 +40,8 @@ struct ParticipantRow: View {
 
       if isCurrentUser {
         Text("(You)")
-          .font(.caption)
-          .foregroundStyle(.secondary)
+          .font(AppFont.caption)
+          .foregroundStyle(AppColor.muted)
       }
     }
     .padding(.vertical, 4)

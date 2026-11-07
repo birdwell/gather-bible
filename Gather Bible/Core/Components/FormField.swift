@@ -13,17 +13,11 @@ struct FormField<Content: View>: View {
   var helper: String? = nil
   @ViewBuilder let content: () -> Content
 
-  @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-
-  private var helperColor: HierarchicalShapeStyle {
-    colorSchemeContrast == .increased ? .primary : .secondary
-  }
-
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text(label)
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
         // Hidden from VoiceOver to avoid double-reading: the label is instead
         // associated directly with the input below.
         .accessibilityHidden(true)
@@ -33,8 +27,8 @@ struct FormField<Content: View>: View {
 
       if let helper {
         Text(helper)
-          .font(.caption)
-          .foregroundStyle(helperColor)
+          .font(AppFont.caption)
+          .foregroundStyle(AppColor.muted)
       }
     }
     .accessibilityElement(children: .contain)

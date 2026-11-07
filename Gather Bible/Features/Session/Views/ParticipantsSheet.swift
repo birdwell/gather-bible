@@ -12,6 +12,10 @@ struct ParticipantsSheet: View {
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
+    sheetContent.appSheet()
+  }
+
+  private var sheetContent: some View {
     NavigationStack {
       List {
         Section {
@@ -21,19 +25,14 @@ struct ParticipantsSheet: View {
               isCurrentUser: participant.id == viewModel.userId,
               showActiveIndicator: false
             )
+            .listRowBackground(Color.clear)
           }
         } header: {
-          Text("\(viewModel.activeParticipantCount) Active")
-        } footer: {
-          if let joinCode = viewModel.joinCode.isEmpty ? nil : viewModel.joinCode {
-            HStack {
-              Text("Session Code: \(joinCode)")
-              CopyableCodeButton(code: joinCode, iconFont: .body)
-            }
-          }
+          Text("\(viewModel.activeParticipantCount) here")
         }
       }
-      .navigationTitle("Participants")
+      .listStyle(.plain)
+      .appNavigationTitle("Participants")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {

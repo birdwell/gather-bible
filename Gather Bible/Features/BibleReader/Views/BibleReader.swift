@@ -17,7 +17,7 @@ struct BibleReader: View {
       if let viewModel {
         ReaderContentView(viewModel: viewModel)
       } else {
-        ProgressView("Loading...")
+        ProgressView("Loading…")
       }
     }
     .onAppear {
@@ -59,15 +59,23 @@ private struct ReaderContentView: View {
     isRegularWidth ? 720 : .infinity
   }
 
-  private var bookAndChapter: String {
+  private var bookTitle: String {
     guard
       let book = viewModel.selectedVersionBooks.first(where: {
         ($0.id ?? "") == viewModel.selectedBook
       })
     else {
-      return "Loading..."
+      return "Loading…"
     }
-    return "\(book.title ?? "Unknown") \(viewModel.selectedChapter)"
+    return book.title ?? "Unknown"
+  }
+
+  /// The host first, then everyone else who's here, excluding you.
+  private var companionNames: [String] {
+    sessionViewModel.participants
+      .filter { $0.active && $0.id != sessionViewModel.userId }
+      .sorted { $0.isHost && !$1.isHost }
+      .map(\.displayName)
   }
 
   private var versionAbbreviation: String {
@@ -75,13 +83,21 @@ private struct ReaderContentView: View {
   }
 
   var body: some View {
-    ZStack(alignment: .bottom) {
-      readerBody
-
-      if viewModel.booksLoaded {
-        chapterNavigationButtons
-      }
+    readerBody
+    .safeAreaInset(edge: .top, spacing: 0) {
+      ReaderTopBar(
+        bookTitle: bookTitle,
+        chapter: viewModel.selectedChapter,
+        version: versionAbbreviation,
+        isLoadingVersion: viewModel.isLoadingVersions && viewModel.availableVersions.isEmpty,
+        canPickPassage: viewModel.booksLoaded,
+        canPickVersion: !viewModel.availableVersions.isEmpty,
+        horizontalPadding: horizontalPadding,
+        onPickPassage: { viewModel.showBookPicker = true },
+        onPickVersion: { viewModel.showVersionPicker = true }
+      )
     }
+    .background(AppColor.ground.ignoresSafeArea())
     // Single container-level haptic: Reduce Motion must NOT gate haptics
     // (they have their own system setting that `sensoryFeedback` respects),
     // and one trigger avoids the double-fire from per-button feedback.
@@ -89,62 +105,8 @@ private struct ReaderContentView: View {
       .impact(weight: .light),
       trigger: "\(viewModel.selectedBook).\(viewModel.selectedChapter)"
     )
-    .navigationTitle(bookAndChapter)
-    .navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      ToolbarItem(placement: .topBarLeading) {
-        Button {
-          if !viewModel.availableVersions.isEmpty {
-            viewModel.showVersionPicker = true
-          }
-        } label: {
-          if viewModel.isLoadingVersions && viewModel.availableVersions.isEmpty {
-            ProgressView()
-              .controlSize(.small)
-              .frame(minWidth: 44)
-          } else {
-            Text(versionAbbreviation)
-              .frame(minWidth: 44)
-          }
-        }
-        .disabled(viewModel.availableVersions.isEmpty)
-        .modifier(GlassToolbarButtonModifier())
-        .accessibilityLabel("Bible version: \(versionAbbreviation)")
-        .accessibilityHint("Selects a different translation")
-      }
-
-      ToolbarItem(placement: .principal) {
-        Button {
-          viewModel.showBookPicker = true
-        } label: {
-          Text(bookAndChapter)
-            .fontWeight(.semibold)
-        }
-        .disabled(!viewModel.booksLoaded)
-        .modifier(GlassToolbarButtonModifier())
-        .accessibilityLabel("Current chapter: \(bookAndChapter)")
-        .accessibilityHint("Selects a different book or chapter")
-      }
-
-      ToolbarItemGroup(placement: .topBarTrailing) {
-        if sessionViewModel.isInSession {
-          Button {
-            viewModel.showParticipantsSheet = true
-          } label: {
-            Label("\(sessionViewModel.activeParticipantCount)", systemImage: "person.2.fill")
-          }
-          .modifier(GlassToolbarButtonModifier())
-          .accessibilityLabel("\(sessionViewModel.activeParticipantCount) participants")
-        }
-
-        AirPlayButton()
-          .frame(width: 44, height: 44)
-          .accessibilityLabel("AirPlay")
-          .accessibilityHint("Streams to Apple TV or other AirPlay devices")
-
-        ReaderMenu()
-      }
-    }
+    .navigationTitle("\(bookTitle) \(viewModel.selectedChapter)")
+    .toolbar(.hidden, for: .navigationBar)
     .sheet(isPresented: $viewModel.showBookPicker) {
       BookAndChapterPickerSheet(viewModel: viewModel)
     }
@@ -157,6 +119,11 @@ private struct ReaderContentView: View {
     .sheet(isPresented: $viewModel.showParticipantsSheet) {
       ParticipantsSheet(viewModel: sessionViewModel)
         .presentationDetents([.medium, .large])
+    }
+    // The participants sheet has nothing to show once the session is over, and
+    // it would otherwise block the session-ended notice.
+    .onChange(of: sessionViewModel.isInSession) { _, isInSession in
+      if !isInSession { viewModel.showParticipantsSheet = false }
     }
     .onChange(of: viewModel.selectedVersionId) { _, _ in
       Task { await viewModel.loadBooksForVersion() }
@@ -175,94 +142,43 @@ private struct ReaderContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     } else {
       SyncableScrollView(viewModel: viewModel) {
-        BibleTextView(
-          viewModel.bibleReference,
-          textOptions: readerSettings.textOptions(for: dynamicTypeSize)
-        )
-        .id("\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)")
+        VStack(alignment: .leading, spacing: 8) {
+          ChapterOpener(
+            chapter: viewModel.selectedChapter,
+            companions: sessionViewModel.isInSession
+              ? ReadingCompanions.text(names: companionNames) : nil,
+            onShowCompanions: { viewModel.showParticipantsSheet = true }
+          )
+          BibleTextView(
+            viewModel.bibleReference,
+            textOptions: readerSettings.textOptions(for: dynamicTypeSize)
+          )
+          .id("\(viewModel.selectedBook).\(viewModel.selectedChapter).\(viewModel.selectedVersionId)")
+
+          ChapterFooter(
+            canGoPrevious: viewModel.canGoPrevious,
+            canGoNext: viewModel.canGoNext,
+            onPrevious: { viewModel.previousChapter() },
+            onNext: { viewModel.nextChapter() }
+          )
+          .padding(.top, 32)
+        }
         .frame(maxWidth: maxContentWidth)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, isRegularWidth ? 24 : 12)
       }
-      // Reserve space for the floating chapter buttons so scroll indicators
-      // and content end above them (replaces a magic `.padding(.bottom, 100)`).
-      .safeAreaInset(edge: .bottom) {
-        Color.clear.frame(height: 72)
-      }
     }
   }
 
   private func errorView(message: String) -> some View {
-    ContentUnavailableView {
-      Label("Couldn't Load", systemImage: "wifi.exclamationmark")
-    } description: {
-      Text(message)
-    } actions: {
-      Button("Retry") {
-        viewModel.retryLoad()
-      }
-      .buttonStyle(.borderedProminent)
-    }
+    EmptyState(
+      title: "Couldn’t load this chapter",
+      message: message,
+      actionTitle: "Try again",
+      action: { viewModel.retryLoad() }
+    )
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-  }
-
-  private var chapterNavigationButtons: some View {
-    HStack {
-      Button(action: { viewModel.previousChapter() }) {
-        Image(systemName: "chevron.left")
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(.secondary)
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .modifier(GlassNavigationButtonModifier())
-      .disabled(!viewModel.canGoPrevious)
-      .accessibilityLabel("Previous Chapter")
-      .keyboardShortcut(.leftArrow, modifiers: [])
-
-      Spacer()
-
-      Button(action: { viewModel.nextChapter() }) {
-        Image(systemName: "chevron.right")
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(.secondary)
-          .frame(width: 44, height: 44)
-          .contentShape(Rectangle())
-      }
-      .modifier(GlassNavigationButtonModifier())
-      .disabled(!viewModel.canGoNext)
-      .accessibilityLabel("Next Chapter")
-      .keyboardShortcut(.rightArrow, modifiers: [])
-    }
-    .padding(.horizontal, isRegularWidth ? 48 : 16)
-    .padding(.bottom, isRegularWidth ? 32 : 16)
-  }
-}
-
-private struct GlassToolbarButtonModifier: ViewModifier {
-  func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      content.buttonStyle(.glass)
-    } else {
-      content.buttonStyle(.bordered)
-    }
-  }
-}
-
-private struct GlassNavigationButtonModifier: ViewModifier {
-  func body(content: Content) -> some View {
-    if #available(iOS 26.0, *) {
-      content
-        .buttonStyle(.glass)
-    } else {
-      content
-        .foregroundStyle(Color.primary)
-        .background(.ultraThinMaterial)
-        .clipShape(Circle())
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-        .buttonStyle(.plain)
-    }
   }
 }
 

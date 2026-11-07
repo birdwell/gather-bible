@@ -18,6 +18,7 @@ final class ReaderSettingsViewModel {
   let availableFontSizes: [CGFloat] = [12, 15, 18, 21, 24, 28, 32]
 
   let availableFonts: [ReaderFont] = [
+    ReaderFont(name: "Newsreader", family: AppFont.family, category: .serif),
     ReaderFont(name: "System Serif", family: "New York", category: .system),
     ReaderFont(name: "System Sans", family: ".AppleSystemUIFont", category: .system),
     ReaderFont(name: "Georgia", family: "Georgia", category: .serif),
@@ -70,7 +71,9 @@ final class ReaderSettingsViewModel {
       fontFamily: fontFamily,
       fontSize: size,
       lineSpacing: size * 0.6,
-      paragraphSpacing: size * 0.5
+      paragraphSpacing: size * 0.5,
+      textColor: AppColor.ink,
+      wocColor: AppColor.wordsOfChrist
     )
   }
 
@@ -78,7 +81,7 @@ final class ReaderSettingsViewModel {
     let storedFamily = UserDefaults.standard.string(forKey: fontFamilyKey)
     let storedSize = UserDefaults.standard.double(forKey: fontSizeKey)
 
-    fontFamily = storedFamily ?? "Georgia"
+    fontFamily = storedFamily ?? AppFont.family
     fontSize = storedSize > 0 ? storedSize : 21
   }
 

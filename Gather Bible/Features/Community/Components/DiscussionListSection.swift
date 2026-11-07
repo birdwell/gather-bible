@@ -14,7 +14,7 @@ struct DiscussionListSection<Content: View>: View {
       content
     } header: {
       Text(title)
-        .font(.headline)
+        .font(AppFont.label)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
   }

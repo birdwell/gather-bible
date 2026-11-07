@@ -7,103 +7,72 @@
 
 import SwiftUI
 
-/// A banner component that displays a session code with copy functionality
+/// The session code at a size people can read across a room, with copy and QR.
 struct SessionCodeBanner: View {
   let code: String
   let isHost: Bool
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @State private var codeCopied = false
   @State private var showingQRCode = false
   @State private var resetTask: Task<Void, Never>?
 
-  @ScaledMetric(relativeTo: .largeTitle) private var codeFontSize: CGFloat = 34
-
-  private var isRegularWidth: Bool {
-    horizontalSizeClass == .regular
-  }
-
   private var spokenCode: String {
     code.map { String($0) }.joined(separator: " ")
   }
 
-  private var bannerAccessibilityLabel: String {
-    var label = "Session Code: \(spokenCode)"
-    if isHost {
-      label += ". You're hosting"
-    }
-    if codeCopied {
-      label += ". Copied to clipboard"
-    }
-    return label
-  }
-
   var body: some View {
-    VStack(spacing: isRegularWidth ? 12 : 8) {
-      Text("Session Code")
-        .font(isRegularWidth ? .subheadline : .caption)
-        .foregroundStyle(.secondary)
+    VStack(alignment: .leading, spacing: 4) {
+      Text("Session code")
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
-      HStack(spacing: isRegularWidth ? 16 : 12) {
+      HStack(spacing: 4) {
         Text(code)
-          .font(.system(size: isRegularWidth ? codeFontSize * 1.4 : codeFontSize, weight: .bold, design: .monospaced))
-          .foregroundStyle(.primary)
-          .kerning(isRegularWidth ? 6 : 4)
-          .accessibilityLabel(spokenCode)
+          .font(AppFont.display)
+          .monospacedDigit()
+          .foregroundStyle(AppColor.ink)
+          .textSelection(.enabled)
+          .accessibilityLabel("Session code: \(spokenCode)")
 
-        Button {
-          copyCode()
-        } label: {
-          Image(systemName: codeCopied ? "checkmark.circle.fill" : "doc.on.doc")
-            .font(isRegularWidth ? .title : .title2)
-            .foregroundStyle(codeCopied ? .green : .accentColor)
-            .contentTransition(.symbolEffect(.replace))
-            .frame(minWidth: 44, minHeight: 44)
-        }
-        .buttonStyle(.borderless)
-        .accessibilityLabel(codeCopied ? "Code copied" : "Copy code")
+        Spacer(minLength: 8)
+
+        iconButton(
+          icon: codeCopied ? .check : .copy,
+          label: codeCopied ? "Code copied" : "Copy code",
+          action: copyCode
+        )
         .accessibilityHint("Copies the session code to the clipboard")
-      }
 
-      if codeCopied {
-        Text("Copied!")
-          .font(.caption)
-          .foregroundStyle(.green)
-          .transition(.opacity.combined(with: .scale))
-      }
-
-      if isHost {
-        HStack(spacing: 12) {
-          Label("You're hosting", systemImage: "crown.fill")
-            .font(isRegularWidth ? .subheadline : .caption)
-            .foregroundStyle(.orange)
-
-          Button {
+        if isHost {
+          iconButton(icon: .qrCode, label: "Show QR code") {
             showingQRCode = true
-          } label: {
-            Label("QR Code", systemImage: "qrcode")
-              .font(isRegularWidth ? .subheadline : .caption)
           }
-          .buttonStyle(.bordered)
-          .accessibilityLabel("Show QR code")
           .accessibilityHint("Shows a QR code for others to scan and join")
         }
       }
     }
-    .frame(maxWidth: .infinity)
-    .padding(isRegularWidth ? 24 : 16)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: isRegularWidth ? 16 : 12))
-    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: codeCopied)
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(bannerAccessibilityLabel)
+    .frame(maxWidth: .infinity, alignment: .leading)
     .sensoryFeedback(trigger: codeCopied) { _, copied in
       copied ? .success : nil
     }
     .sheet(isPresented: $showingQRCode) {
       SessionQRCodeView(sessionCode: code)
     }
+  }
+
+  private func iconButton(
+    icon: AppIcon,
+    label: LocalizedStringKey,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      AppIconView(icon)
+        .foregroundStyle(AppColor.ink)
+        .frame(width: 44, height: 44)
+        .background(AppColor.surface, in: RoundedRectangle(cornerRadius: 8))
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(label)
   }
 
   private func copyCode() {
