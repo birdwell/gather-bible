@@ -41,6 +41,7 @@ final class MockSessionRepository: SessionRepository {
   var createSessionCalled = false
   var joinSessionCalled = false
   var leaveSessionCalled = false
+  var lastLeaveIsHost: Bool?
   var startListeningCalled = false
   var stopListeningCalled = false
   var setupDisconnectHandlerCalled = false
@@ -118,6 +119,7 @@ final class MockSessionRepository: SessionRepository {
 
   func leaveSession(sessionId: String, userId: String, isHost: Bool) async throws {
     leaveSessionCalled = true
+    lastLeaveIsHost = isHost
     lastSessionId = sessionId
     lastUserId = userId
     if let error = shouldThrowError { throw error }

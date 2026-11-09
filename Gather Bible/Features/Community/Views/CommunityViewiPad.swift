@@ -13,21 +13,12 @@ enum CommunitySection: String, CaseIterable, Identifiable {
   case participants = "Participants"
 
   var id: String { rawValue }
-
-  var icon: String {
-    switch self {
-    case .session: return "person.2.fill"
-    case .discussions: return "bubble.left.and.bubble.right.fill"
-    case .participants: return "person.3.fill"
-    }
-  }
 }
 
 struct CommunityViewiPad: View {
   @EnvironmentObject var sessionViewModel: SessionViewModel
   @State private var selectedSection: CommunitySection? = .session
   @State private var columnVisibility: NavigationSplitViewVisibility = .all
-  @State private var showingCreateSheet = false
   @State private var showingJoinSheet = false
   @State private var pendingCodeForSheet: String?
   @State private var conflictingJoinCode: String?
@@ -35,14 +26,11 @@ struct CommunityViewiPad: View {
   var body: some View {
     NavigationSplitView(columnVisibility: $columnVisibility) {
       sidebar
-        .navigationTitle("Community")
+        .appNavigationTitle("Community")
     } detail: {
       detailView
     }
     .navigationSplitViewStyle(.balanced)
-    .sheet(isPresented: $showingCreateSheet) {
-      CreateSessionSheet(viewModel: sessionViewModel, isPresented: $showingCreateSheet)
-    }
     // Clear the deep-link code once the sheet closes so a later manual Join
     // doesn't reuse a stale session code.
     .sheet(isPresented: $showingJoinSheet, onDismiss: { pendingCodeForSheet = nil }) {
@@ -53,7 +41,7 @@ struct CommunityViewiPad: View {
       )
     }
     .alert(
-      "Something Went Wrong",
+      "Something went wrong",
       isPresented: Binding(
         get: {
           sessionViewModel.errorMessage != nil
@@ -74,7 +62,7 @@ struct CommunityViewiPad: View {
     )
     // Deep-link into a join code while already in a session: offer to switch.
     .alert(
-      "Join a Different Session?",
+      "Join a different session?",
       isPresented: Binding(
         get: { conflictingJoinCode != nil },
         set: { presenting in
@@ -82,7 +70,7 @@ struct CommunityViewiPad: View {
         }
       )
     ) {
-      Button("Leave & Join") {
+      Button("Leave and join") {
         if let code = conflictingJoinCode {
           conflictingJoinCode = nil
           Task {
@@ -131,91 +119,26 @@ struct CommunityViewiPad: View {
     List(selection: $selectedSection) {
       Section {
         ForEach(CommunitySection.allCases) { section in
-          sidebarRow(for: section)
+          Text(section.rawValue)
+            .font(AppFont.body)
+            .foregroundStyle(AppColor.ink)
+            .badge(
+              section == .participants && sessionViewModel.isInSession
+                ? sessionViewModel.activeParticipantCount : 0
+            )
             .tag(section)
         }
       } header: {
         if sessionViewModel.isInSession {
-          sessionStatusHeader
-        }
-      }
-
-      if !sessionViewModel.isInSession {
-        Section {
-          quickActions
+          Text("In session · \(sessionViewModel.joinCode)")
+            .font(AppFont.caption)
+            .foregroundStyle(AppColor.muted)
         }
       }
     }
     .listStyle(.sidebar)
-  }
-
-  private func sidebarRow(for section: CommunitySection) -> some View {
-    Label {
-      HStack {
-        Text(section.rawValue)
-        Spacer()
-        if section == .discussions && sessionViewModel.activeDiscussion != nil {
-          Circle()
-            .fill(Color.accentColor)
-            .frame(width: 8, height: 8)
-            .accessibilityHidden(true)
-        }
-      }
-    } icon: {
-      Image(systemName: section.icon)
-    }
-    // List-native badge reads correctly on the grouped sidebar background
-    // (unlike a custom capsule) and is hidden automatically when the count is 0.
-    .badge(
-      section == .participants && sessionViewModel.isInSession
-        ? sessionViewModel.activeParticipantCount : 0
-    )
-  }
-
-  private var sessionStatusHeader: some View {
-    HStack {
-      Circle()
-        .fill(.green)
-        .frame(width: 8, height: 8)
-      Text("In Session")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-      Spacer()
-      Text(sessionViewModel.joinCode)
-        .font(.caption.monospaced())
-        .foregroundStyle(.secondary)
-    }
-    .padding(.vertical, 4)
-  }
-
-  private var quickActions: some View {
-    VStack(spacing: 12) {
-      Button {
-        showingCreateSheet = true
-      } label: {
-        if sessionViewModel.isLoading {
-          ProgressView()
-            .frame(maxWidth: .infinity)
-        } else {
-          Label("Create Session", systemImage: "plus.circle.fill")
-            .frame(maxWidth: .infinity)
-        }
-      }
-      .buttonStyle(.borderedProminent)
-      .controlSize(.large)
-      .disabled(sessionViewModel.isLoading)
-
-      Button {
-        showingJoinSheet = true
-      } label: {
-        Label("Join Session", systemImage: "person.badge.plus")
-          .frame(maxWidth: .infinity)
-      }
-      .buttonStyle(.bordered)
-      .controlSize(.large)
-      .disabled(sessionViewModel.isLoading)
-    }
-    .padding(.vertical, 8)
+    .scrollContentBackground(.hidden)
+    .background(AppColor.surface.ignoresSafeArea())
   }
 
   // MARK: - Detail View
@@ -230,11 +153,7 @@ struct CommunityViewiPad: View {
     case .participants:
       ParticipantsDetailView(viewModel: sessionViewModel)
     case .none:
-      ContentUnavailableView(
-        "Select a Section",
-        systemImage: "sidebar.left",
-        description: Text("Choose a section from the sidebar")
-      )
+      EmptyState(title: "Choose a section", message: "Pick one from the sidebar.")
     }
   }
 }

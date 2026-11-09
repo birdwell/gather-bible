@@ -40,7 +40,7 @@ struct SessionManagementView: View {
     }
     // Surface repository/view-model failures that aren't already shown inline in a sheet.
     .alert(
-      "Something Went Wrong",
+      "Something went wrong",
       isPresented: Binding(
         get: { viewModel.errorMessage != nil && !viewModel.isInlineErrorSheetPresented },
         set: { presenting in
@@ -54,7 +54,7 @@ struct SessionManagementView: View {
     }
     // Deep-link into a join code while already in a session: offer to switch.
     .alert(
-      "Join a Different Session?",
+      "Join a different session?",
       isPresented: Binding(
         get: { conflictingJoinCode != nil },
         set: { presenting in
@@ -62,7 +62,7 @@ struct SessionManagementView: View {
         }
       )
     ) {
-      Button("Leave & Join") {
+      Button("Leave and join") {
         if let code = conflictingJoinCode {
           conflictingJoinCode = nil
           Task {

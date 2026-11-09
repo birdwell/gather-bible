@@ -110,6 +110,36 @@ Not used by Firebase Functions, Vercel, or EAS. Do not put this key in
 `firebase functions:config` or a functions secret; nothing in `firebase/`
 reads it.
 
+## Building on this Mac instead
+
+`./testflight.sh` runs the `beta` lane in `fastlane/Fastfile` (`brew install
+fastlane`), using Xcode 27.1 at `/Applications/Xcode.app`. It works over SSH with
+no prompts, and an App Manager API key is enough.
+
+It signs manually with its own certificate and profile instead of cloud signing,
+and keeps them in a dedicated `gather-bible-signing` keychain. The project stays
+on automatic signing: the lane restores `project.pbxproj` after the build.
+
+Setup on the machine, none of it in the repo:
+
+- One API key in `~/.appstoreconnect/private_keys`
+- `ASC_ISSUER_ID=<id>` in `~/.appstoreconnect/gather-bible.env`
+
+Build logs are in `build/testflight-logs`.
+
+Before you run it:
+
+- `MARKETING_VERSION` must be higher than the latest version approved on App
+  Store Connect, or Apple rejects the upload. Bump it in the project.
+- The build number is picked for you.
+
+After the upload, Apple needs an export compliance answer before testers get the
+build, because `ITSAppUsesNonExemptEncryption` isn't set. Ask the user before
+answering, since it's a legal statement about the app.
+
+The GitHub workflow above has no secrets set yet, so it fails on every push. Use
+this script until that's fixed.
+
 ## Notes
 
 - The Periphery build phase is skipped automatically when

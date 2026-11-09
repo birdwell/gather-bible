@@ -16,19 +16,23 @@ struct InSessionView: View {
   @State private var showingDraftDiscussions = false
   @State private var showingDiscussionResults = false
   @State private var showingLeaveConfirmation = false
+  @State private var showingParticipants = false
 
   private var isRegularWidth: Bool {
     horizontalSizeClass == .regular
   }
 
-  var body: some View {
-    VStack(spacing: isRegularWidth ? 20 : 16) {
-      SessionCodeBanner(
-        code: viewModel.joinCode,
-        isHost: viewModel.isHost
-      )
+  private var otherNames: [String] {
+    viewModel.participants
+      .filter { $0.active && $0.id != viewModel.userId }
+      .sorted { $0.isHost && !$1.isHost }
+      .map(\.displayName)
+  }
 
-      participantsRow
+  var body: some View {
+    VStack(alignment: .leading, spacing: 32) {
+      passageHeader
+      SessionCodeBanner(code: viewModel.joinCode, isHost: viewModel.isHost)
 
       if !viewModel.isHost {
         followHostToggle
@@ -39,19 +43,18 @@ struct InSessionView: View {
       }
 
       if viewModel.isHost {
-        Divider()
         discussionSection
       }
 
-      Divider()
+      Spacer(minLength: 0)
 
       leaveButton
-
-      if viewModel.isLoading {
-        ProgressView()
-      }
     }
-    .frame(maxWidth: isRegularWidth ? 560 : .infinity)
+    .frame(maxWidth: isRegularWidth ? 560 : .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .sheet(isPresented: $showingParticipants) {
+      ParticipantsSheet(viewModel: viewModel)
+        .presentationDetents([.medium, .large])
+    }
     .sheet(isPresented: $showingCreateDiscussion) {
       CreateDiscussionSheet(viewModel: viewModel)
     }
@@ -72,11 +75,11 @@ struct InSessionView: View {
       DiscussionPromptSheet(viewModel: viewModel)
     }
     .confirmationDialog(
-      viewModel.isHost ? "End Session for Everyone?" : "Leave Session?",
+      viewModel.isHost ? "End session for everyone?" : "Leave session?",
       isPresented: $showingLeaveConfirmation,
       titleVisibility: .visible
     ) {
-      Button(viewModel.isHost ? "End Session" : "Leave Session", role: .destructive) {
+      Button(viewModel.isHost ? "End session" : "Leave session", role: .destructive) {
         Task { await viewModel.leaveSession() }
       }
       Button("Cancel", role: .cancel) {}
@@ -93,38 +96,53 @@ struct InSessionView: View {
     }
   }
 
-  // MARK: - Participants Row
+  private var responseSummary: String {
+    let count = viewModel.discussionResponses.count
+    return "\(count) \(count == 1 ? "response" : "responses") so far"
+  }
 
-  private var participantsRow: some View {
-    HStack {
-      Image(systemName: "person.2.fill")
-        .foregroundStyle(.secondary)
-      Text(
-        "\(viewModel.activeParticipantCount) participant\(viewModel.activeParticipantCount == 1 ? "" : "s")"
-      )
-      .foregroundStyle(.secondary)
+  // MARK: - Passage Header
 
-      Spacer()
+  private var passageHeader: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(viewModel.isHost ? "You’re hosting" : "Reading now")
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
-      // Current position
-      Text("\(viewModel.currentBook) \(viewModel.currentChapter)")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+      Text("\(BibleBookNames.title(for: viewModel.currentBook)) \(viewModel.currentChapter)")
+        .font(AppFont.display)
+        .foregroundStyle(AppColor.ink)
+        .accessibilityAddTraits(.isHeader)
+
+      Button {
+        showingParticipants = true
+      } label: {
+        HStack(spacing: 4) {
+          Text(ReadingCompanions.text(names: otherNames))
+          AppIconView(.caretRight, size: 14)
+        }
+        .font(AppFont.body)
+        .foregroundStyle(AppColor.muted)
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityHint("Shows who's in this session")
     }
-    .font(.subheadline)
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(
-      "\(viewModel.activeParticipantCount) participant\(viewModel.activeParticipantCount == 1 ? "" : "s"), currently reading \(viewModel.currentBook) chapter \(viewModel.currentChapter)"
-    )
+    .padding(.top, 32)
   }
 
   // MARK: - Follow Host Toggle
 
   private var followHostToggle: some View {
-    Toggle("Follow Host", isOn: Binding(
+    Toggle(isOn: Binding(
       get: { viewModel.followHost },
       set: { _ in viewModel.toggleFollowHost() }
-    ))
+    )) {
+      Text("Follow host")
+        .font(AppFont.label)
+        .foregroundStyle(AppColor.ink)
+    }
   }
 
   // MARK: - Claim Host Button
@@ -133,11 +151,10 @@ struct InSessionView: View {
     Button {
       Task { await viewModel.claimHost() }
     } label: {
-      Label("Claim Host", systemImage: "crown.fill")
+      Text("Claim host")
         .frame(maxWidth: .infinity)
     }
-    .buttonStyle(.borderedProminent)
-    .tint(.orange)
+    .buttonStyle(.appPrimary)
     .disabled(viewModel.isLoading)
     .accessibilityHint("Becomes the session host")
   }
@@ -145,74 +162,46 @@ struct InSessionView: View {
   // MARK: - Discussion Section
 
   private var discussionSection: some View {
-    VStack(spacing: 12) {
-      // Active discussion indicator
+    VStack(alignment: .leading, spacing: 12) {
       if let discussion = viewModel.activeDiscussion {
         Button {
           showingDiscussionResults = true
         } label: {
-          HStack {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-              .foregroundStyle(.blue)
+          VStack(alignment: .leading, spacing: 4) {
+            Text(discussion.question)
+              .font(AppFont.heading)
+              .foregroundStyle(AppColor.ink)
+              .multilineTextAlignment(.leading)
 
-            VStack(alignment: .leading, spacing: 2) {
-              Text("Active Discussion")
-                .font(.subheadline)
-                .fontWeight(.medium)
-
-              Text(discussion.question)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            }
-
-            Spacer()
-
-            Text("\(viewModel.discussionResponses.count)")
-              .font(.caption)
-              .fontWeight(.medium)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 4)
-              .background(Color.blue.opacity(0.2))
-              .clipShape(Capsule())
-
-            Image(systemName: "chevron.right")
-              .font(.caption)
-              .foregroundStyle(.tertiary)
+            Text(responseSummary)
+              .font(AppFont.caption)
+              .foregroundStyle(AppColor.muted)
           }
-          .padding(12)
-          .background(Color(.secondarySystemBackground))
-          .clipShape(RoundedRectangle(cornerRadius: 12))
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Active discussion: \(discussion.question)")
-        .accessibilityValue("\(viewModel.discussionResponses.count) responses")
         .accessibilityHint("Opens the discussion responses")
-      }
-
-      // Discussion action buttons
-      HStack(spacing: 12) {
+      } else {
         Button {
           showingCreateDiscussion = true
         } label: {
-          Label("New Discussion", systemImage: "plus.bubble.fill")
+          Text("Ask the group a question")
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
-        .disabled(viewModel.activeDiscussion != nil)
-        .accessibilityHint("Creates a new discussion question")
+        .buttonStyle(.appPrimary)
+      }
 
-        if !viewModel.draftDiscussions.isEmpty {
-          Button {
-            showingDraftDiscussions = true
-          } label: {
-            Label("\(viewModel.draftDiscussions.count) Drafts", systemImage: "doc.text")
-          }
-          .buttonStyle(.bordered)
-          .accessibilityLabel("\(viewModel.draftDiscussions.count) draft discussions")
-          .accessibilityHint("Opens your saved draft discussions")
+      if !viewModel.draftDiscussions.isEmpty {
+        Button {
+          showingDraftDiscussions = true
+        } label: {
+          Text("\(viewModel.draftDiscussions.count) drafts")
+            .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.appSecondary)
+        .accessibilityHint("Opens your saved draft discussions")
       }
     }
   }
@@ -223,10 +212,9 @@ struct InSessionView: View {
     Button(role: .destructive) {
       showingLeaveConfirmation = true
     } label: {
-      Label("Leave Session", systemImage: "xmark.circle.fill")
-        .frame(maxWidth: .infinity)
+      Text(viewModel.isHost ? "End session" : "Leave session")
     }
-    .buttonStyle(.bordered)
+    .buttonStyle(.appQuiet)
     .disabled(viewModel.isLoading)
     .accessibilityHint(viewModel.isHost ? "Ends the session for everyone" : "Leaves this reading session")
   }

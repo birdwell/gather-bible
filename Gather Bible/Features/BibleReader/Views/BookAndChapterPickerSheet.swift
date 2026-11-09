@@ -24,9 +24,12 @@ struct BookAndChapterPickerSheet: View {
           ForEach(viewModel.selectedVersionBooks, id: \.id) { book in
             bookRow(book)
               .id(book.id ?? "")
+              .listRowBackground(Color.clear)
+              .listRowSeparator(.hidden)
           }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .onAppear {
           // Pre-expand and scroll to the currently selected book so the user
           // doesn't start at Genesis every time.
@@ -39,9 +42,14 @@ struct BookAndChapterPickerSheet: View {
           }
         }
       }
-      .navigationTitle("Select Passage")
+      .navigationTitle("Choose a passage")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        ToolbarItem(placement: .principal) {
+          Text("Choose a passage")
+            .font(AppFont.heading)
+            .foregroundStyle(AppColor.ink)
+        }
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") {
             dismiss()
@@ -50,6 +58,7 @@ struct BookAndChapterPickerSheet: View {
       }
     }
     .presentationDetents(isRegularWidth ? [.large] : [.medium, .large])
+    .presentationBackground(AppColor.ground)
   }
 
   @ViewBuilder
@@ -68,15 +77,12 @@ struct BookAndChapterPickerSheet: View {
       } label: {
         HStack {
           Text(book.title ?? "Unknown")
-            .font(.body)
-            .fontWeight(isSelected ? .semibold : .regular)
-            .foregroundStyle(Color.primary)
+            .font(isSelected ? AppFont.label : AppFont.body)
+            .foregroundStyle(AppColor.ink)
           Spacer()
-          Image(systemName: "chevron.down")
-            .font(.caption)
-            .foregroundStyle(Color.secondary)
+          AppIconView(.caretDown, size: 16)
+            .foregroundStyle(AppColor.muted)
             .rotationEffect(.degrees(isExpanded ? 0 : -90))
-            .frame(width: 16, height: 16)
         }
         .contentShape(Rectangle())
         .padding(.vertical, 12)
@@ -111,13 +117,13 @@ struct BookAndChapterPickerSheet: View {
           dismiss()
         } label: {
           Text("\(chapter)")
-            .font(.body.weight(.medium))
+            .font(AppFont.label)
             .minimumScaleFactor(0.7)
             .lineLimit(1)
-            .foregroundStyle(isCurrent ? Color.white : Color.primary)
+            .foregroundStyle(isCurrent ? AppColor.onAccent : AppColor.ink)
             .frame(width: cellSize, height: cellSize)
-            .background(isCurrent ? Color.accentColor : Color(.systemGray5))
-            .clipShape(RoundedRectangle(cornerRadius: isRegularWidth ? 10 : 8))
+            .background(isCurrent ? AppColor.accent : AppColor.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(PlainButtonStyle())
         .accessibilityLabel("Chapter \(chapter)")

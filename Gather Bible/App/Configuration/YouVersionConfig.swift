@@ -18,6 +18,27 @@ struct YouVersionConfig {
     /// Initialize YouVersion SDK.
     /// Crashes at startup when the key is missing or still an unexpanded build setting.
     static func configure() {
+        YouVersionPlatform.configure(appKey: requireAppKey())
+    }
+
+    static func makeSearchClient() -> BibleSearchClient {
+        BibleSearchClient(appKey: requireAppKey())
+    }
+
+    /// Get available Bible versions
+    static func getAvailableVersions(forLanguageTag: String?) async throws -> [BibleVersion] {
+        return try await YouVersionAPI.Bible.versions(forLanguageTag: forLanguageTag)
+    }
+
+    /// Get version details including books
+    static func getVersionDetails(versionId: Int) async throws -> BibleVersion {
+        // The repository keeps versions on disk, so later launches skip the network.
+        return try await BibleVersionRepository.shared.version(withId: versionId)
+    }
+
+    /// Runtime environment wins so an Xcode scheme can supply the key.
+    /// Archive/TestFlight builds read the Info.plist value baked in at build time.
+    private static func requireAppKey() -> String {
         guard let appKey = resolvedAppKey() else {
             fatalError(
                 """
@@ -29,21 +50,9 @@ struct YouVersionConfig {
                 """
             )
         }
-        YouVersionPlatform.configure(appKey: appKey)
+        return appKey
     }
 
-    /// Get available Bible versions
-    static func getAvailableVersions(forLanguageTag: String?) async throws -> [BibleVersion] {
-        return try await YouVersionAPI.Bible.versions(forLanguageTag: forLanguageTag)
-    }
-
-    /// Get version details including books
-    static func getVersionDetails(versionId: Int) async throws -> BibleVersion {
-        return try await YouVersionAPI.Bible.version(versionId: versionId)
-    }
-
-    /// Runtime environment wins so an Xcode scheme can supply the key.
-    /// Archive/TestFlight builds read the Info.plist value baked in at build time.
     private static func resolvedAppKey() -> String? {
         let fromEnvironment = ProcessInfo.processInfo.environment[appKeyName]
         let fromBundle = Bundle.main.object(forInfoDictionaryKey: appKeyName) as? String

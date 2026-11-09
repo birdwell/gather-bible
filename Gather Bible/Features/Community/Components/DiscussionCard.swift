@@ -53,39 +53,22 @@ struct DiscussionCard: View {
   }
 
   private var cardContent: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      HStack {
-        if style == .active {
-          Circle()
-            .fill(Color.accentColor)
-            .frame(width: 8, height: 8)
-            .accessibilityHidden(true)
-        }
-
-        Text(discussion.question)
-          .font(.headline)
-          .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-          .multilineTextAlignment(.leading)
-
-        Spacer()
-
-        if style == .draft {
-          DraftBadge()
-        }
-      }
+    VStack(alignment: .leading, spacing: 4) {
+      Text(discussion.question)
+        .font(style == .active ? AppFont.heading : AppFont.label)
+        .foregroundStyle(AppColor.ink)
+        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 3)
+        .multilineTextAlignment(.leading)
 
       if let responseCount, style != .draft {
-        Label(
-          "\(responseCount) response\(responseCount == 1 ? "" : "s")",
-          systemImage: "text.bubble"
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        Text("\(responseCount) response\(responseCount == 1 ? "" : "s")")
+          .font(AppFont.caption)
+          .foregroundStyle(AppColor.muted)
       }
     }
     .padding(16)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color(.secondarySystemBackground))
+    .background(AppColor.surface)
     .clipShape(RoundedRectangle(cornerRadius: 12))
     .contentShape(RoundedRectangle(cornerRadius: 12))
   }

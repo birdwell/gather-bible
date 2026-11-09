@@ -5,3 +5,8 @@
 .env.*
 !.env.example
 Config/Local.xcconfig
+.gstack/
+
+# fastlane
+/fastlane/report.xml
+/fastlane/test_output

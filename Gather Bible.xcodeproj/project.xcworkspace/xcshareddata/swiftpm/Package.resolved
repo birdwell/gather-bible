@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/youversion/platform-sdk-swift.git",
       "state" : {
-        "revision" : "844967817fb2b672bc32ba278af08e99b0749574",
-        "version" : "1.0.0"
+        "revision" : "1fd5b08120601966a9be127e2f459be329ec4e2a",
+        "version" : "5.5.0"
       }
     },
     {

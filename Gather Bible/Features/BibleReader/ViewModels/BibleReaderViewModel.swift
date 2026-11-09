@@ -25,6 +25,18 @@ final class BibleReaderViewModel {
     availableVersions.first(where: { $0.id == selectedVersionId })
   }
 
+  /// Identifies what's on screen, so views can react when the passage or version changes.
+  var chapterKey: String {
+    "\(selectedBook).\(selectedChapter).\(selectedVersionId)"
+  }
+
+  var selectedBookTitle: String {
+    guard let book = selectedVersionBooks.first(where: { ($0.id ?? "") == selectedBook }) else {
+      return "Loading…"
+    }
+    return book.title ?? "Unknown"
+  }
+
   // MARK: - Data State
   var availableVersions: [BibleVersion] = []
   var selectedVersionBooks: [BibleBook] = []
@@ -209,14 +221,58 @@ final class BibleReaderViewModel {
 
   // MARK: - Data Loading
 
+  // MARK: - Reading Position
+
+  private enum PositionKey {
+    static let book = "reader_position_book"
+    static let chapter = "reader_position_chapter"
+    static let version = "reader_position_version"
+  }
+
+  func restorePosition(from defaults: UserDefaults = .standard) {
+    guard let book = defaults.string(forKey: PositionKey.book) else { return }
+    selectedBook = book
+    selectedChapter = max(1, defaults.integer(forKey: PositionKey.chapter))
+    let version = defaults.integer(forKey: PositionKey.version)
+    if version > 0 { selectedVersionId = version }
+  }
+
+  func savePosition(to defaults: UserDefaults = .standard) {
+    defaults.set(selectedBook, forKey: PositionKey.book)
+    defaults.set(selectedChapter, forKey: PositionKey.chapter)
+    defaults.set(selectedVersionId, forKey: PositionKey.version)
+  }
+
+  /// The chapter people are most likely to open next, including the next book's first.
+  var nextChapterReference: BibleReference? {
+    guard let index = selectedVersionBooks.firstIndex(where: { $0.id == selectedBook }),
+      let chapterCount = selectedVersionBooks[index].chapters?.count
+    else { return nil }
+
+    if selectedChapter < chapterCount {
+      return BibleReference(
+        versionId: selectedVersionId, bookUSFM: selectedBook, chapter: selectedChapter + 1)
+    }
+
+    let nextIndex = selectedVersionBooks.index(after: index)
+    guard selectedVersionBooks.indices.contains(nextIndex),
+      let nextBook = selectedVersionBooks[nextIndex].id
+    else { return nil }
+    return BibleReference(versionId: selectedVersionId, bookUSFM: nextBook, chapter: 1)
+  }
+
   /// Loads available versions. Skips the network fetch if versions were already
   /// loaded (e.g. on a tab switch) unless `force` is true (used by Retry).
   func loadVersions(force: Bool = false) {
     guard force || !hasLoadedVersions else { return }
 
+    // Text only needs the current version's books, so don't make it wait for the full list.
+    if !booksLoaded {
+      Task { await loadBooksForVersion() }
+    }
+
     Task {
       isLoadingVersions = true
-      loadErrorMessage = nil
       do {
         let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "en"
         availableVersions = try await YouVersionConfig.getAvailableVersions(
@@ -235,12 +291,13 @@ final class BibleReaderViewModel {
             selectedVersionId = firstVersion.id
           }
         }
-
-        await loadBooksForVersion()
       } catch {
         isLoadingVersions = false
-        loadErrorMessage =
-          "We couldn't load Bible versions. Check your connection and try again."
+        // Reading still works without the list. Only the version picker needs it.
+        if !booksLoaded {
+          loadErrorMessage =
+            "We couldn't load Bible versions. Check your connection and try again."
+        }
         print("📖 [BibleReader] ❌ Error loading versions: \(error)")
       }
     }
@@ -260,11 +317,19 @@ final class BibleReaderViewModel {
     }
   }
 
-  func loadBooksForVersion() async {
+  /// Loads the books for the selected version. A result that arrives after the selection has
+  /// moved on is dropped, so it can't replace the books of the version now being read.
+  func loadBooksForVersion(
+    load: (Int) async throws -> [BibleBook]? = {
+      try await YouVersionConfig.getVersionDetails(versionId: $0).books
+    }
+  ) async {
+    let requestedVersionId = selectedVersionId
     do {
-      let version = try await YouVersionConfig.getVersionDetails(versionId: selectedVersionId)
+      let loadedBooks = try await load(requestedVersionId)
+      guard selectedVersionId == requestedVersionId else { return }
 
-      if let books = version.books {
+      if let books = loadedBooks {
         selectedVersionBooks = books
         loadErrorMessage = nil
 
@@ -277,9 +342,17 @@ final class BibleReaderViewModel {
           "We couldn't load this translation. Check your connection and try again."
       }
     } catch {
+      print("📖 [BibleReader] ❌ Error loading books: \(error)")
+      guard selectedVersionId == requestedVersionId else { return }
       loadErrorMessage =
         "We couldn't load this translation. Check your connection and try again."
-      print("📖 [BibleReader] ❌ Error loading books: \(error)")
     }
+  }
+
+  /// Loads the next chapter in the background once this one has had time to appear.
+  func prefetchNextChapter() async {
+    try? await Task.sleep(for: .seconds(1))
+    guard !Task.isCancelled, let next = nextChapterReference else { return }
+    _ = try? await BibleChapterRepository.shared.chapter(withReference: next)
   }
 }

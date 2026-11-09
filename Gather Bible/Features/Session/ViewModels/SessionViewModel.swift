@@ -21,6 +21,8 @@ class SessionViewModel: ObservableObject {
   // MARK: - Session State
 
   @Published var isInSession = false
+  /// True after the host ends the session you're in, until you've seen the notice.
+  @Published var sessionEndedByHost = false
   @Published var isHost = false
   @Published var joinCode = ""
   @Published private(set) var sessionId: String?
@@ -141,7 +143,7 @@ class SessionViewModel: ObservableObject {
     repository.currentStatePublisher
       .receive(on: DispatchQueue.main)
       .sink { [weak self] state in
-        self?.currentState = state
+        self?.handleStateUpdate(state)
       }
       .store(in: &cancellables)
 
@@ -287,6 +289,37 @@ class SessionViewModel: ObservableObject {
     resetSessionState()
 
     isLoading = false
+  }
+
+  private func handleStateUpdate(_ state: SessionState?) {
+    currentState = state
+
+    guard isInSession, let state else { return }
+
+    // The server decides who hosts. A host who lost connection and reconnects
+    // after a takeover must stop acting as host.
+    isHost = state.hostId == userId
+
+    if state.endedAt != nil, !isHost {
+      exitEndedSession()
+    }
+  }
+
+  private func exitEndedSession() {
+    let endedSessionId = sessionId
+    repository.stopListening()
+    resetSessionState()
+    sessionEndedByHost = true
+
+    guard let endedSessionId else { return }
+    // Cleanup only. A failure here, such as being offline, shouldn't hold up leaving.
+    Task { [repository, userId] in
+      try? await repository.leaveSession(
+        sessionId: endedSessionId,
+        userId: userId,
+        isHost: false
+      )
+    }
   }
 
   private func resetSessionState() {

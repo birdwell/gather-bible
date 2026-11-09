@@ -52,6 +52,10 @@ struct SyncableScrollView<Content: View>: View {
         viewModel.publishScrollPosition(offset: lastScrollOffset, isScrolling: false)
       }
     }
+    // A new chapter starts at the top, since navigation now lives at the end of the text.
+    .onChange(of: "\(viewModel.selectedBook).\(viewModel.selectedChapter)") {
+      scrollPosition.scrollTo(edge: .top)
+    }
     .onChange(of: viewModel.targetScrollOffset) { _, targetOffset in
       // Guests apply position when not actively scrolling
       guard viewModel.shouldApplyScrollOffset else { return }

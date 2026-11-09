@@ -81,13 +81,13 @@ private struct ButtonStyleModifier: ViewModifier {
   func body(content: Content) -> some View {
     switch style {
     case .prominent:
-      content.buttonStyle(.borderedProminent)
+      content.buttonStyle(.appPrimary)
     case .bordered:
-      content.buttonStyle(.bordered)
+      content.buttonStyle(.appSecondary)
     case .destructive:
       // `Button(role: .destructive)` supplies the semantics and system red;
       // `.bordered` keeps the visual weight consistent with other styles.
-      content.buttonStyle(.bordered)
+      content.buttonStyle(.appSecondary)
     }
   }
 }

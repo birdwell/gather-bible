@@ -15,45 +15,50 @@ struct ReaderSettingsSheet: View {
         Spacer()
           .frame(height: 8)
 
+        AppearancePicker()
         previewSection
         fontSizeSection
         fontFamilySection
         Spacer()
       }
       .padding()
-      .navigationTitle("Reader Settings")
+      .navigationTitle("Reader settings")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
+        ToolbarItem(placement: .principal) {
+          Text("Reader settings")
+            .font(AppFont.heading)
+            .foregroundStyle(AppColor.ink)
+        }
         ToolbarItem(placement: .confirmationAction) {
           Button("Done") { dismiss() }
         }
       }
     }
+    .presentationBackground(AppColor.ground)
   }
 
   private var previewSection: some View {
     VStack(alignment: .leading, spacing: 8) {
       Text("Preview")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .textCase(.uppercase)
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
       Text("In the beginning God created the heavens and the earth.")
         .font(.custom(readerSettings.fontFamily, size: readerSettings.fontSize))
         .lineSpacing(readerSettings.fontSize * 0.3)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(AppColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
   }
 
   private var fontSizeSection: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Text("Text Size")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .textCase(.uppercase)
+      Text("Text size")
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
       HStack(spacing: 16) {
         Button {
@@ -62,9 +67,9 @@ struct ReaderSettingsSheet: View {
           }
         } label: {
           Text("A")
-            .font(.body.weight(.medium))
+            .font(AppFont.caption)
             .frame(width: 44, height: 44)
-            .background(Color(.secondarySystemBackground))
+            .background(AppColor.surface)
             .clipShape(Circle())
         }
         .disabled(!readerSettings.canDecreaseFontSize)
@@ -79,9 +84,9 @@ struct ReaderSettingsSheet: View {
           }
         } label: {
           Text("A")
-            .font(.title.weight(.medium))
+            .font(AppFont.heading)
             .frame(width: 44, height: 44)
-            .background(Color(.secondarySystemBackground))
+            .background(AppColor.surface)
             .clipShape(Circle())
         }
         .disabled(!readerSettings.canIncreaseFontSize)
@@ -114,9 +119,8 @@ struct ReaderSettingsSheet: View {
   private var fontFamilySection: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Font")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .textCase(.uppercase)
+        .font(AppFont.caption)
+        .foregroundStyle(AppColor.muted)
 
       LazyVGrid(
         columns: [GridItem(.adaptive(minimum: isRegularWidth ? 140 : 100), spacing: 8)],
@@ -152,13 +156,9 @@ private struct FontButton: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
-        .background(isSelected ? Color.accentColor.opacity(0.15) : Color(.secondarySystemBackground))
-        .overlay(
-          RoundedRectangle(cornerRadius: 8)
-            .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-        )
+        .background(isSelected ? AppColor.accent : AppColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+        .foregroundStyle(isSelected ? AppColor.onAccent : AppColor.ink)
     }
     .buttonStyle(.plain)
     .accessibilityAddTraits(isSelected ? .isSelected : [])

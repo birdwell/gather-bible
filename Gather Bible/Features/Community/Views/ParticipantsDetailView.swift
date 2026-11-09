@@ -13,14 +13,15 @@ struct ParticipantsDetailView: View {
       if viewModel.isInSession {
         participantsList
       } else {
-        ContentUnavailableView(
-          "No Active Session",
-          systemImage: "person.3",
-          description: Text("Join or create a session to view participants")
+        EmptyState(
+          title: "No active session",
+          message: "Join or start a session to see who’s here."
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       }
     }
-    .navigationTitle("Participants")
+    .background(AppColor.ground.ignoresSafeArea())
+    .appNavigationTitle("Participants")
   }
 
   private var participantsList: some View {
@@ -30,9 +31,11 @@ struct ParticipantsDetailView: View {
           participant: participant,
           isCurrentUser: participant.id == viewModel.userId
         )
+        .listRowBackground(Color.clear)
       }
     }
-    .listStyle(.insetGrouped)
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
   }
 }
 

@@ -15,23 +15,25 @@ struct DiscussionsDetailView: View {
       if viewModel.isInSession {
         discussionsList
       } else {
-        ContentUnavailableView(
-          "No Active Session",
-          systemImage: "bubble.left.and.bubble.right",
-          description: Text("Join or create a session to view discussions")
+        EmptyState(
+          title: "No active session",
+          message: "Join or start a session to see discussions."
         )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       }
     }
-    .navigationTitle("Discussions")
+    .background(AppColor.ground.ignoresSafeArea())
+    .appNavigationTitle("Discussions")
     .toolbar {
       if viewModel.isHost && viewModel.isInSession {
         ToolbarItem(placement: .primaryAction) {
           Button {
             showingCreateDiscussion = true
           } label: {
-            Label("New Discussion", systemImage: "plus")
+            AppIconView(.plus)
           }
           .disabled(viewModel.activeDiscussion != nil)
+          .accessibilityLabel("Ask a question")
         }
       }
     }
@@ -64,14 +66,14 @@ struct DiscussionsDetailView: View {
                   Button {
                     Task { await viewModel.publishDiscussion(draft) }
                   } label: {
-                    Label("Activate", systemImage: "paperplane.fill")
+                    Text("Send to group")
                   }
                   .disabled(viewModel.activeDiscussion != nil)
 
                   Button(role: .destructive) {
                     Task { await viewModel.deleteDiscussion(draft) }
                   } label: {
-                    Label("Delete", systemImage: "trash")
+                    Text("Delete")
                   }
                 }
             }
@@ -93,13 +95,12 @@ struct DiscussionsDetailView: View {
           && viewModel.draftDiscussions.isEmpty
           && viewModel.completedDiscussions.isEmpty
         {
-          ContentUnavailableView(
-            "No Discussions",
-            systemImage: "bubble.left.and.bubble.right",
-            description: Text(
-              viewModel.isHost ? "Create a discussion to get started" : "Waiting for host to start a discussion")
+          EmptyState(
+            title: "No discussions yet",
+            message: viewModel.isHost
+              ? "Ask the group a question to get started."
+              : "Questions from the host appear here."
           )
-          .padding(.top, 60)
         }
       }
       .padding(24)

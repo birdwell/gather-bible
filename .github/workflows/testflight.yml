@@ -15,7 +15,7 @@ concurrency:
 jobs:
   testflight:
     name: Build and upload to TestFlight
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
     permissions:
       contents: read
@@ -24,12 +24,16 @@ jobs:
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Select Xcode
         run: |
-          if [ -d "/Applications/Xcode_26.1.app" ]; then
-            sudo xcode-select -s "/Applications/Xcode_26.1.app"
+          # iPhone Duo needs the iOS 27.1 SDK to use its full screen.
+          xcode_app=$(ls -d /Applications/Xcode_27.1*.app 2>/dev/null | head -1)
+          if [ -n "$xcode_app" ]; then
+            sudo xcode-select -s "$xcode_app"
+          else
+            echo "::warning::Xcode 27.1 isn't on this runner, so this build won't use the full iPhone Duo screen."
           fi
           xcodebuild -version
 

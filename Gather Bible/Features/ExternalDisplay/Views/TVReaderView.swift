@@ -9,7 +9,7 @@ struct TVReaderView: View {
     BibleTextOptions(
       fontFamily: "Georgia",
       fontSize: 48,
-      lineSpacing: 32,
+      lineSpacing: 0.67,
       paragraphSpacing: 24
     )
   }
