@@ -51,6 +51,9 @@
 
 /* Begin PBXFileReference section */
 		60BAF3392EF6DD8D00C05EA5 /* Gather Bible.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Gather Bible.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE001F8A4B7C9D2E0001 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		C0FFEE001F8A4B7C9D2E0005 /* Defaults.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Defaults.xcconfig; sourceTree = "<group>"; };
+		C0FFEE001F8A4B7C9D2E0004 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		60BAF3482EF6DD8E00C05EA5 /* Gather BibleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gather BibleTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		60BAF3522EF6DD8E00C05EA5 /* Gather BibleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Gather BibleUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -105,6 +108,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C0FFEE001F8A4B7C9D2E0002 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				C0FFEE001F8A4B7C9D2E0001 /* App.xcconfig */,
+				C0FFEE001F8A4B7C9D2E0005 /* Defaults.xcconfig */,
+				C0FFEE001F8A4B7C9D2E0004 /* Local.xcconfig.example */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		6036C97B2EF7B71400D5CF69 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +128,7 @@
 		60BAF3302EF6DD8D00C05EA5 = {
 			isa = PBXGroup;
 			children = (
+				C0FFEE001F8A4B7C9D2E0002 /* Config */,
 				60BAF33B2EF6DD8D00C05EA5 /* Gather Bible */,
 				60BAF34B2EF6DD8E00C05EA5 /* Gather BibleTests */,
 				60BAF3552EF6DD8E00C05EA5 /* Gather BibleUITests */,
@@ -140,6 +154,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 60BAF35C2EF6DD8E00C05EA5 /* Build configuration list for PBXNativeTarget "Gather Bible" */;
 			buildPhases = (
+				C0FFEE001F8A4B7C9D2E0003 /* Require YouVersion App Key */,
 				60BAF3352EF6DD8D00C05EA5 /* Sources */,
 				60BAF3362EF6DD8D00C05EA5 /* Frameworks */,
 				60BAF3372EF6DD8D00C05EA5 /* Resources */,
@@ -291,6 +306,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C0FFEE001F8A4B7C9D2E0003 /* Require YouVersion App Key */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Require YouVersion App Key";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "trimmed=$(printf '%s' \"${YOUVERSION_APP_KEY:-}\" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')\nif [ -z \"$trimmed\" ]; then\n  echo \"error: YOUVERSION_APP_KEY is not set. Copy Config/Local.xcconfig.example to Config/Local.xcconfig and set YOUVERSION_APP_KEY, or export YOUVERSION_APP_KEY before building. See docs/testflight-ci.md.\"\n  exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		04C72EBC5F774582AED1113A /* Upload Debug Symbols to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -506,6 +537,7 @@
 		};
 		60BAF35D2EF6DD8E00C05EA5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FFEE001F8A4B7C9D2E0001 /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -518,6 +550,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gather-Bible-Info.plist";
+				INFOPLIST_KEY_YOUVERSION_APP_KEY = "$(YOUVERSION_APP_KEY)";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";
@@ -550,6 +583,7 @@
 		};
 		60BAF35E2EF6DD8E00C05EA5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C0FFEE001F8A4B7C9D2E0001 /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -562,6 +596,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Gather-Bible-Info.plist";
+				INFOPLIST_KEY_YOUVERSION_APP_KEY = "$(YOUVERSION_APP_KEY)";
 				INFOPLIST_KEY_CFBundleDisplayName = "Gather Bible";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Gather Bible uses the local network to discover nearby Bible study sessions.";

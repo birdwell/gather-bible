@@ -1,0 +1,4 @@
+// Defaults first, then the gitignored local file. Do not assign
+// YOUVERSION_APP_KEY in this file; an assignment here would override Local.
+#include "Defaults.xcconfig"
+#include? "Local.xcconfig"

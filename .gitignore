@@ -1,6 +1,10 @@
 /build
 
 .sentryclirc
+.env
+.env.*
+!.env.example
+Config/Local.xcconfig
 .gstack/
 
 # fastlane

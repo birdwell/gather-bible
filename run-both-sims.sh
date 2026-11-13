@@ -10,11 +10,22 @@ SIM1_NAME="iPhone 17"
 
 SIM2_ID="132A8978-C727-4BBF-B012-CC5A97606A73"
 SIM2_NAME="iPhone 17 Pro"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || {
+  echo "Could not enter $PROJECT_DIR" >&2
+  exit 1
+}
+
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/scripts/youversion-build-setting.sh"
+if ! youversion_prepare_xcode_args; then
+  echo "YOUVERSION_APP_KEY is not set. Export it, or copy Config/Local.xcconfig.example to Config/Local.xcconfig and set YOUVERSION_APP_KEY. See docs/testflight-ci.md." >&2
+  exit 1
+fi
 
 echo "🔨 Building app..."
-xcodebuild -scheme "$SCHEME" -destination "generic/platform=iOS Simulator" -derivedDataPath build build -quiet
+xcodebuild -scheme "$SCHEME" -destination "generic/platform=iOS Simulator" -derivedDataPath build build -quiet "${YOUVERSION_XCODE_ARGS[@]}"
 
 if [ $? -ne 0 ]; then
     echo "❌ Build failed - run without -quiet to see errors"
