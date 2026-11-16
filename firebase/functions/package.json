@@ -15,7 +15,7 @@
   },
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "^14.5.0",
+    "firebase-admin": "^14.5.1",
     "firebase-functions": "^7.4.0"
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "eslint": "^10.14.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-plugin-jsdoc": "^65.4.4",
+    "eslint-plugin-jsdoc": "^65.4.5",
     "globals": "^17.14.0"
   },
   "private": true
