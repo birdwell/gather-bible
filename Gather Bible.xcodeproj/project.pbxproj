@@ -732,7 +732,7 @@
 			repositoryURL = "https://github.com/getsentry/sentry-cocoa/";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.0.0;
+				minimumVersion = 9.35.0;
 			};
 		};
 		6036C94B2EF72D9800D5CF69 /* XCRemoteSwiftPackageReference "platform-sdk-swift" */ = {
@@ -740,7 +740,7 @@
 			repositoryURL = "https://github.com/youversion/platform-sdk-swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 5.5.0;
+				version = 5.7.0;
 			};
 		};
 		6036C9562EF7345E00D5CF69 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
@@ -748,7 +748,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 12.7.0;
+				minimumVersion = 13.2.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
