@@ -1,0 +1,3 @@
+// Copy to Config/Local.xcconfig and set the YouVersion app key.
+// Config/Local.xcconfig is gitignored. Do not commit the value.
+YOUVERSION_APP_KEY =
