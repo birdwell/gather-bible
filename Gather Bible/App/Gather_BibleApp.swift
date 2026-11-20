@@ -36,8 +36,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             // options.attachScreenshot = true // This adds a screenshot to the error events
             // options.attachViewHierarchy = true // This adds the view hierarchy to the error events
             
-            // Enable experimental logging features
-            options.experimental.enableLogs = true
+            // Stable in Sentry Cocoa 9. Removed in v10.
+            options.enableLogs = true
         }
 
     FirebaseApp.configure()
